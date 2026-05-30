@@ -1,22 +1,22 @@
-.PHONY: dev build run test clean
+.PHONY: dev dev-build down build test tidy vet clean
 
 dev:
-	docker compose up -d minio
-	@echo "MinIO:  localhost:9000 (API), localhost:9001 (Console)"
+	docker compose up -d
+	@echo "Server:   http://localhost:8080"
+	@echo "MinIO:    http://localhost:9000 (API), http://localhost:9001 (Console)"
+	@echo "Redis:    localhost:6379"
 
-dev-full:
-	docker compose up -d --profile full
-	@echo "Redis:  localhost:6380"
-	@echo "MinIO:  localhost:9000 (API), localhost:9001 (Console)"
+dev-build:
+	docker compose up -d --build
+	@echo "Server:   http://localhost:8080"
+	@echo "MinIO:    http://localhost:9000 (API), http://localhost:9001 (Console)"
+	@echo "Redis:    localhost:6379"
 
 down:
 	docker compose down
 
 build:
 	go build -o bin/server ./cmd/server
-
-run: build
-	./bin/server
 
 test:
 	go test ./...
