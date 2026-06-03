@@ -1,0 +1,98 @@
+[
+  {
+    "name": "standard_us",
+    "company": "Acme Corp",
+    "color": [40, 60, 120],
+    "payload": {
+      "invoice_number": "INV-2026-001",
+      "date": "2026-06-03",
+      "due_date": "2026-07-03",
+      "bill_to": "Wayne Enterprises",
+      "bill_to_address": "1007 Mountain Drive\nGotham, NY 10001",
+      "items": [
+        {"description": "Widget A - Premium Grade", "quantity": 10, "rate": 49.99},
+        {"description": "Widget B - Standard", "quantity": 25, "rate": 12.50},
+        {"description": "Consulting hours", "quantity": 8, "rate": 150.00}
+      ],
+      "tax_rate": 8.5,
+      "notes": "Payment due within 30 days. Late payments subject to 1.5% monthly interest."
+    }
+  },
+  {
+    "name": "international_unicode",
+    "company": "München GmbH",
+    "color": [180, 40, 40],
+    "payload": {
+      "invoice_number": "INV-2026-002",
+      "date": "2026-06-03",
+      "due_date": "2026-07-03",
+      "bill_to": "株式会社 田中商事",
+      "bill_to_address": "〒100-0005\n東京都千代田区丸の内1-1-1",
+      "items": [
+        {"description": "Übersetzungsdienstleistungen (Translation Services)", "quantity": 1, "rate": 2500.00},
+        {"description": "Software-Lizenz — Enterprise Edition", "quantity": 5, "rate": 499.00},
+        {"description": "Consultation sur site à São Paulo", "quantity": 3, "rate": 1200.00}
+      ],
+      "tax_rate": 19,
+      "notes": "Bitte überweisen Sie den Betrag innerhalb von 14 Tagen.\nVAT ID: DE123456789"
+    }
+  },
+  {
+    "name": "long_names_and_descriptions",
+    "company": "International Consolidated Business Solutions and Logistics Group Incorporated",
+    "color": [20, 130, 80],
+    "payload": {
+      "invoice_number": "INV-2026-003",
+      "date": "2026-06-03",
+      "due_date": "2026-08-03",
+      "bill_to": "Department of Redundancy Department — Division of Excessive Documentation Affairs",
+      "bill_to_address": "Building 42, Wing C, Corridor 7, Room 3B-221\nGovernment Administrative Complex\nSpringfield, IL 62701",
+      "items": [
+        {"description": "Comprehensive multi-phase enterprise resource planning consultancy engagement with extended support package", "quantity": 1, "rate": 75000.00},
+        {"description": "Custom software development and integration services for legacy mainframe modernization initiative", "quantity": 1, "rate": 120000.00}
+      ],
+      "tax_rate": 0,
+      "notes": "This invoice covers the initial discovery phase. Subsequent phases will be billed separately per the master services agreement dated January 15th, 2026. Any questions regarding this invoice should be directed to billing@icslg.com."
+    }
+  },
+  {
+    "name": "minimal",
+    "company": "Freelancer LLC",
+    "color": [80, 80, 80],
+    "payload": {
+      "invoice_number": "INV-2026-004",
+      "date": "2026-06-03",
+      "items": [
+        {"description": "Website redesign", "quantity": 1, "rate": 5000.00}
+      ]
+    }
+  },
+  {
+    "name": "many_items",
+    "company": "Office Supplies Co.",
+    "color": [200, 100, 0],
+    "payload": {
+      "invoice_number": "INV-2026-005",
+      "date": "2026-06-03",
+      "due_date": "2026-07-03",
+      "bill_to": "Startup Inc.",
+      "bill_to_address": "123 Main St\nSan Francisco, CA 94105",
+      "items": [
+        {"description": "Printer paper (A4, 500 sheets)", "quantity": 20, "rate": 4.99},
+        {"description": "Blue ballpoint pens (box of 50)", "quantity": 10, "rate": 12.50},
+        {"description": "Sticky notes (3x3, yellow, 12-pack)", "quantity": 15, "rate": 8.25},
+        {"description": "Binder clips (assorted, 100-pack)", "quantity": 8, "rate": 6.99},
+        {"description": "Whiteboard markers (4-color set)", "quantity": 12, "rate": 5.49},
+        {"description": "Desk organizer tray", "quantity": 5, "rate": 22.00},
+        {"description": "USB-C hub (7-port)", "quantity": 3, "rate": 45.99},
+        {"description": "Monitor stand (adjustable)", "quantity": 4, "rate": 89.00},
+        {"description": "Keyboard (mechanical, wired)", "quantity": 6, "rate": 75.00},
+        {"description": "Mouse pad (extended, 900x400mm)", "quantity": 7, "rate": 14.99},
+        {"description": "Cable management clips (50-pack)", "quantity": 10, "rate": 3.99},
+        {"description": "Shipping & handling", "quantity": 1, "rate": 35.00}
+      ],
+      "tax_rate": 9.25,
+      "notes": "Bulk order discount applied. Net-30 terms. Purchase order #PO-99231."
+    }
+  }
+]

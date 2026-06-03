@@ -6,14 +6,37 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 
-	"github.com/go-pdf/fpdf"
+	"github.com/jung-kurt/gofpdf"
 )
 
 //go:embed DejaVuSans.ttf
 var dejaVuSans []byte
+
+var fontPath string
+var fontDirPath string
+var fontOnce sync.Once
+
+func fontDir() string {
+	fontOnce.Do(func() {
+		dir, err := os.MkdirTemp("", "go-invoice-fonts")
+		if err != nil {
+			panic("renderer: cannot create temp font dir: " + err.Error())
+		}
+		fp := dir + "/DejaVuSans.ttf"
+		if err := os.WriteFile(fp, dejaVuSans, 0644); err != nil {
+			os.RemoveAll(dir)
+			panic("renderer: cannot write temp font: " + err.Error())
+		}
+		fontDirPath = dir
+		fontPath = fp
+	})
+	return fontDirPath
+}
 
 type Options struct {
 	CompanyName  string
@@ -33,8 +56,10 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 		return nil, fmt.Errorf("renderer: parse payload: %w", err)
 	}
 
-	pdf := fpdf.New("P", "mm", "A4", "")
-	pdf.AddUTF8FontFromBytes("DejaVu", "", dejaVuSans)
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.SetFontLocation(fontDir())
+	pdf.AddUTF8Font("DejaVu", "", "DejaVuSans.ttf")
+	pdf.AddPage()
 	pdf.SetFont("DejaVu", "", 12)
 	pdf.SetAutoPageBreak(true, 15)
 
@@ -62,7 +87,6 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 		opts.PrimaryColor = [3]int{40, 60, 120}
 	}
 
-	// Header
 	r, g, b := opts.PrimaryColor[0], opts.PrimaryColor[1], opts.PrimaryColor[2]
 	pdf.SetFillColor(r, g, b)
 	pdf.SetTextColor(255, 255, 255)
@@ -73,13 +97,11 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetY(32)
 
-	// Invoice metadata
 	row("Invoice #", strVal(data, "invoice_number"))
 	row("Date", strVal(data, "date"))
 	row("Due Date", strVal(data, "due_date"))
 	pdf.Ln(4)
 
-	// Bill To
 	pdf.SetFont("DejaVu", "", 11)
 	pdf.CellFormat(0, 6, "Bill To:", "", 1, "L", false, 0, "")
 	billTo := strVal(data, "bill_to_name")
@@ -98,7 +120,6 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	pdf.Ln(4)
 	line()
 
-	// Items table
 	colW := []float64{80, 30, 30, 30}
 	headers := []string{"Description", "Qty", "Rate", "Amount"}
 	pdf.SetFont("DejaVu", "", 10)
@@ -143,7 +164,6 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	}
 	line()
 
-	// Totals
 	taxRate := floatVal(data, "tax_rate")
 	tax := subtotal * taxRate / 100
 	total := subtotal + tax
@@ -159,12 +179,11 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	if taxRate > 0 {
 		totalRow(fmt.Sprintf("Tax (%.0f%%):", taxRate), tax)
 	}
-	pdf.SetFont("DejaVu", "B", 11)
+	pdf.SetFont("DejaVu", "", 12)
 	pdf.CellFormat(140, 8, "Total:", "", 0, "R", false, 0, "")
 	pdf.CellFormat(30, 8, fmt.Sprintf("%.2f", total), "", 1, "R", false, 0, "")
 	pdf.Ln(6)
 
-	// Notes
 	notes := strVal(data, "notes")
 	if notes != "" {
 		pdf.SetFont("DejaVu", "", 9)
@@ -179,18 +198,30 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 }
 
 func sanitize(s string) string {
+	s = stripEmoji(s)
 	if len(s) > 5000 {
 		s = s[:5000]
 	}
 	return s
 }
 
-func wrapText(pdf *fpdf.Fpdf, text string, width float64) string {
+func stripEmoji(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if r <= 0xFFFF {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+func wrapText(pdf *gofpdf.Fpdf, text string, width float64) string {
 	lines := pdf.SplitText(text, width)
 	return strings.Join(lines, "\n")
 }
 
-func itemRowHeight(pdf *fpdf.Fpdf, desc string, colW float64) float64 {
+func itemRowHeight(pdf *gofpdf.Fpdf, desc string, colW float64) float64 {
 	lines := pdf.SplitText(desc, colW-2)
 	h := float64(len(lines)) * 5
 	if h < 8 {
@@ -208,7 +239,7 @@ func strVal(data map[string]json.RawMessage, key string) string {
 	if err := json.Unmarshal(v, &s); err != nil {
 		return ""
 	}
-	return s
+	return stripEmoji(s)
 }
 
 func floatVal(data map[string]json.RawMessage, key string) float64 {
