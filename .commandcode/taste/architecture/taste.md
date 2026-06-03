@@ -10,4 +10,4 @@
 - Deliver incrementally using a phase-by-phase MVP approach — keep each phase small, simple, and verifiable before moving to the next. Confidence: 0.85
 
 # storage
-- Use a single S3-compatible API for all object storage backends (S3, R2, MinIO) — configure via endpoint URL and credentials, no separate code paths per provider. Confidence: 0.65
+- Use a single S3-compatible API for all object storage backends (S3, R2, MinIO) — configure via endpoint URL and credentials, no separate code paths per provider. Confidence: 0.75
