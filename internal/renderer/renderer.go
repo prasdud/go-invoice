@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -17,7 +18,6 @@ import (
 //go:embed DejaVuSans.ttf
 var dejaVuSans []byte
 
-var fontPath string
 var fontDirPath string
 var fontOnce sync.Once
 
@@ -27,13 +27,11 @@ func fontDir() string {
 		if err != nil {
 			panic("renderer: cannot create temp font dir: " + err.Error())
 		}
-		fp := dir + "/DejaVuSans.ttf"
-		if err := os.WriteFile(fp, dejaVuSans, 0644); err != nil {
+		if err := os.WriteFile(dir+"/DejaVuSans.ttf", dejaVuSans, 0644); err != nil {
 			os.RemoveAll(dir)
-			panic("renderer: cannot write temp font: " + err.Error())
+			panic("renderer: cannot write DejaVuSans: " + err.Error())
 		}
 		fontDirPath = dir
-		fontPath = fp
 	})
 	return fontDirPath
 }
@@ -51,6 +49,10 @@ type item struct {
 }
 
 func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
+	if hasCJK(payload) {
+		return generateChrome(opts, payload)
+	}
+
 	var data map[string]json.RawMessage
 	if err := json.Unmarshal(payload, &data); err != nil {
 		return nil, fmt.Errorf("renderer: parse payload: %w", err)
@@ -60,12 +62,22 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	pdf.SetFontLocation(fontDir())
 	pdf.AddUTF8Font("DejaVu", "", "DejaVuSans.ttf")
 	pdf.AddPage()
-	pdf.SetFont("DejaVu", "", 12)
 	pdf.SetAutoPageBreak(true, 15)
 
 	pageW, _ := pdf.GetPageSize()
 	margin := pdf.GetX()
 	width := pageW - 2*margin
+
+	// Seed font with all glyphs needed
+	seed := allStrings(data)
+	if seed != "" {
+		pdf.SetFont("DejaVu", "", 1)
+		pdf.SetTextColor(255, 255, 255)
+		pdf.CellFormat(0, 1, seed, "", 1, "L", false, 0, "")
+	}
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetFont("DejaVu", "", 12)
+	pdf.SetY(0)
 
 	row := func(label string, value string) {
 		if label == "" || value == "" {
@@ -73,7 +85,6 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 		}
 		pdf.SetFont("DejaVu", "", 10)
 		pdf.CellFormat(45, 6, label+":", "", 0, "L", false, 0, "")
-		pdf.SetFont("DejaVu", "", 10)
 		pdf.MultiCell(width-45, 6, wrapText(pdf, value, width-45), "", "L", false)
 	}
 
@@ -171,7 +182,6 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	totalRow := func(label string, val float64) {
 		pdf.SetFont("DejaVu", "", 10)
 		pdf.CellFormat(140, 6, label, "", 0, "R", false, 0, "")
-		pdf.SetFont("DejaVu", "", 10)
 		pdf.CellFormat(30, 6, fmt.Sprintf("%.2f", val), "", 1, "R", false, 0, "")
 	}
 
@@ -197,6 +207,23 @@ func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func allStrings(data map[string]json.RawMessage) string {
+	var b strings.Builder
+	for k, v := range data {
+		if k == "items" || k == "tax_rate" {
+			continue
+		}
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			b.WriteString(stripEmoji(s))
+		}
+	}
+	for _, it := range getItems(data) {
+		b.WriteString(stripEmoji(it.Description))
+	}
+	return b.String()
+}
+
 func sanitize(s string) string {
 	s = stripEmoji(s)
 	if len(s) > 5000 {
@@ -214,6 +241,36 @@ func stripEmoji(s string) string {
 		}
 	}
 	return b.String()
+}
+
+func hasCJK(payload json.RawMessage) bool {
+	var data map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &data); err != nil {
+		return false
+	}
+	for k, v := range data {
+		if k == "tax_rate" {
+			continue
+		}
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			for _, r := range s {
+				if unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) ||
+					unicode.Is(unicode.Katakana, r) || unicode.Is(unicode.Hangul, r) {
+					return true
+				}
+			}
+		}
+	}
+	for _, it := range getItems(data) {
+		for _, r := range it.Description {
+			if unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) ||
+				unicode.Is(unicode.Katakana, r) || unicode.Is(unicode.Hangul, r) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func wrapText(pdf *gofpdf.Fpdf, text string, width float64) string {

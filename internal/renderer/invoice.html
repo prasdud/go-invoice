@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "DejaVu Sans", "Noto Sans CJK SC", "Noto Sans CJK JP", sans-serif;
+    font-size: 10pt;
+    color: #000;
+    padding: 30px 25px;
+    width: 210mm;
+  }
+  .header {
+    background: {{.PrimaryColor}};
+    color: #fff;
+    padding: 10px 8px;
+    font-size: 16pt;
+    margin-bottom: 16px;
+  }
+  .meta { margin-bottom: 12px; }
+  .meta-row { display: flex; }
+  .meta-row .label { width: 80px; font-size: 10pt; }
+  .meta-row .value { font-size: 10pt; }
+
+  .bill-to-title { font-size: 11pt; font-weight: bold; margin-bottom: 2px; }
+  .bill-to { margin-bottom: 12px; font-size: 10pt; }
+  .bill-addr { margin-bottom: 12px; font-size: 10pt; white-space: pre-wrap; }
+
+  hr { border: 0.5px solid #ccc; margin: 8px 0; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  th { background: {{.PrimaryColor}}; color: #fff; padding: 5px 4px; font-size: 10pt; text-align: center; }
+  td { padding: 4px; font-size: 9pt; border-bottom: 1px solid #eee; }
+  td.desc { text-align: left; }
+  td.qty, td.rate, td.amount { text-align: right; }
+
+  .totals { margin-top: 8px; }
+  .totals-row { display: flex; justify-content: flex-end; font-size: 10pt; padding: 2px 0; }
+  .totals-row .label { width: 120px; text-align: right; padding-right: 20px; }
+  .totals-row .value { width: 80px; text-align: right; }
+  .total { font-size: 12pt; font-weight: bold; padding-top: 4px; margin-top: 2px; border-top: 1px solid #000; }
+
+  .notes { font-size: 9pt; color: #555; margin-top: 16px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="header">{{.CompanyName}}</div>
+
+    <div class="meta">
+      {{if .InvoiceNum}}<div class="meta-row"><span class="label">Invoice #:</span><span class="value">{{.InvoiceNum}}</span></div>{{end}}
+      {{if .Date}}<div class="meta-row"><span class="label">Date:</span><span class="value">{{.Date}}</span></div>{{end}}
+      {{if .DueDate}}<div class="meta-row"><span class="label">Due Date:</span><span class="value">{{.DueDate}}</span></div>{{end}}
+    </div>
+
+    {{if .BillTo}}
+    <div class="bill-to-title">Bill To:</div>
+    <div class="bill-to">{{.BillTo}}</div>
+    {{end}}
+
+    {{if .BillToAddr}}
+    <div class="bill-addr">{{.BillToAddr}}</div>
+    {{end}}
+
+    <hr>
+
+    <table>
+      <tr><th style="width:55%">Description</th><th style="width:15%">Qty</th><th style="width:15%">Rate</th><th style="width:15%">Amount</th></tr>
+      {{range .Items}}
+      <tr>
+        <td class="desc">{{.Description}}</td>
+        <td class="qty">{{.Quantity}}</td>
+        <td class="rate">{{.Rate}}</td>
+        <td class="amount">{{.Amount}}</td>
+      </tr>
+      {{end}}
+    </table>
+
+    <hr>
+
+    <div class="totals">
+      <div class="totals-row"><span class="label">Subtotal:</span><span class="value">{{.Subtotal}}</span></div>
+      {{if gt .TaxRate 0.0}}
+      <div class="totals-row"><span class="label">Tax ({{printf "%.0f" .TaxRate}}%):</span><span class="value">{{.Tax}}</span></div>
+      {{end}}
+      <div class="totals-row total"><span class="label">Total:</span><span class="value">{{.Total}}</span></div>
+    </div>
+
+    {{if .Notes}}
+    <div class="notes">{{.Notes}}</div>
+    {{end}}
+  </div>
+</body>
+</html>

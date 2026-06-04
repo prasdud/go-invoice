@@ -1,12 +1,14 @@
 module github.com/prasdud/go-invoice
 
-go 1.24.9
+go 1.26
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.11
 	github.com/aws/aws-sdk-go-v2/config v1.32.22
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.21
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.103.1
+	github.com/chromedp/cdproto v0.0.0-20260427013145-5737772c319b
+	github.com/chromedp/chromedp v0.15.1
 	github.com/jung-kurt/gofpdf v1.16.2
 )
 
@@ -25,4 +27,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.43.1 // indirect
 	github.com/aws/smithy-go v1.27.0 // indirect
+	github.com/chromedp/sysutil v1.1.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.4.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
 )
