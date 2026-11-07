@@ -72,6 +72,24 @@ The caller picks the engine; the service never sniffs payloads. The `basic` engi
 payloads with `422` (the embedded font has no CJK glyphs) instead of emitting blank text —
 use `html` for those.
 
+## Benchmarks
+
+Measured on a **1 vCPU / 1 GiB** replica against a **real Cloudflare R2 bucket**, closed-loop
+load ramp running in-network (`cmd/stress`, 15s per step):
+
+| Engine | Best sustained | p50 | p99 at saturation | Render mean | Upload mean |
+|---|---|---|---|---|---|
+| `basic` | ~1,820 invoices/min | ~525ms | ~1.1s | 9ms | 507ms |
+| `html` (CJK) | ~284 invoices/min | ~690ms | 4.3–7.7s | 1,617ms | 568ms |
+
+The upload round-trip to storage dominates: throughput ≈ `MAX_CONCURRENT_RENDERS ÷ (render + upload)`.
+On this box the basic engine has **~3.6x headroom over 500 invoices/min**; the html engine
+needs at least 2 vCPUs. Raising `MAX_CONCURRENT_RENDERS` or using a bucket region closer to
+your callers scales throughput proportionally.
+
+Reproduce with a running server: `go run ./cmd/stress -steps 1,2,4,8,16,32,64 -duration 15s`
+(full results and run instructions in `scripts/loadtest/README.md`).
+
 ## Payload fields
 
 | Field | Type | Notes |
