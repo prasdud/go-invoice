@@ -42,6 +42,7 @@ func fontDir() string {
 type Options struct {
 	CompanyName  string
 	PrimaryColor [3]int
+	Logo         *Logo
 }
 
 type item struct {
@@ -126,9 +127,24 @@ func generateBasic(ctx context.Context, opts Options, payload json.RawMessage) (
 	pdf.SetFillColor(r, g, b)
 	pdf.SetTextColor(255, 255, 255)
 	pdf.Rect(margin, 10, width, 18, "F")
+
+	var logoW, logoH float64
+	if opts.Logo != nil {
+		logoW, logoH = registerLogo(pdf, opts.Logo)
+	}
+
 	pdf.SetFont("DejaVu", "", 16)
 	pdf.SetXY(margin+4, 12)
-	pdf.CellFormat(width-8, 12, sanitize(opts.CompanyName), "", 0, "L", false, 0, "")
+	nameW := width - 8
+	if logoW > 0 {
+		nameW -= logoW + 4
+	}
+	pdf.CellFormat(nameW, 12, sanitize(opts.CompanyName), "", 0, "L", false, 0, "")
+	if logoW > 0 {
+		pdf.ImageOptions("logo",
+			margin+width-logoW-4, 10+(18-logoH)/2, logoW, logoH,
+			false, gofpdf.ImageOptions{ImageType: opts.Logo.Type}, 0, "")
+	}
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetY(32)
 

@@ -9,11 +9,11 @@
 
 ## 2. Branding (Logo)
 
-- [ ] 2.1 Config: `COMPANY_LOGO` (optional path); load at startup, sniff PNG/JPEG by content, cap 1 MiB, fail fast on invalid.
-- [ ] 2.2 `renderer.Options`: logo bytes, type, and prebuilt data URI; html context gains `Logo` (`template.URL`); `default.html` header shows it when present.
-- [ ] 2.3 Basic engine: draw the logo right-aligned in the header, aspect preserved, fitting header height; no logo means layout unchanged.
-- [ ] 2.4 `.env.example`: document `COMPANY_LOGO`.
-  - Verify: tests for present / absent / invalid logo; visual check of both engines with a sample logo.
+- [x] 2.1 Config: `COMPANY_LOGO` (optional path); load at startup, sniff PNG/JPEG by content, cap 1 MiB, fail fast on invalid.
+- [x] 2.2 `renderer.Options`: logo bytes, type, and prebuilt data URI; html context gains `Logo` (`template.URL`); `default.html` header shows it when present.
+- [x] 2.3 Basic engine: draw the logo right-aligned in the header, aspect preserved, fitting header height; no logo means layout unchanged.
+- [x] 2.4 `.env.example`: document `COMPANY_LOGO`.
+  - Verify: tests for present / absent / invalid logo; visual check of both engines with a sample logo. (verified visually via QuickLook on both engines)
 
 ## 3. Docs
 

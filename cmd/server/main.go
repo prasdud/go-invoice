@@ -49,11 +49,21 @@ func main() {
 	}
 	cancelBoot()
 
+	var logo *renderer.Logo
+	if cfg.CompanyLogo != "" {
+		logo, err = renderer.LoadLogo(cfg.CompanyLogo)
+		if err != nil {
+			log.Fatalf("logo: %v", err)
+		}
+		logger.Info("logo loaded", "path", cfg.CompanyLogo, "type", logo.Type, "bytes", len(logo.Bytes))
+	}
+
 	srv := api.New(api.Config{
 		BaseURL:              cfg.BaseURL,
 		APIKey:               cfg.APIKey,
 		CompanyName:          cfg.CompanyName,
 		CompanyRGB:           cfg.CompanyRGB,
+		Logo:                 logo,
 		MaxConcurrentRenders: cfg.MaxConcurrentRenders,
 		AdmissionWait:        time.Duration(cfg.AdmissionWaitMS) * time.Millisecond,
 		RenderTimeout:        time.Duration(cfg.RenderTimeoutSeconds) * time.Second,

@@ -12,6 +12,7 @@ type Config struct {
 	APIKey               string
 	CompanyName          string
 	CompanyRGB           [3]int
+	CompanyLogo          string
 	MaxConcurrentRenders int
 	AdmissionWaitMS      int
 	RenderTimeoutSeconds int
@@ -52,6 +53,7 @@ func Load() (*Config, error) {
 		APIKey:               getEnv("API_KEY", ""),
 		CompanyName:          getEnv("COMPANY_NAME", "Invoice"),
 		CompanyRGB:           rgb,
+		CompanyLogo:          getEnv("COMPANY_LOGO", ""),
 		MaxConcurrentRenders: maxRenders,
 		AdmissionWaitMS:      admissionWait,
 		RenderTimeoutSeconds: renderTimeout,

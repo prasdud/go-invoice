@@ -40,6 +40,7 @@ type Config struct {
 	APIKey               string
 	CompanyName          string
 	CompanyRGB           [3]int
+	Logo                 *renderer.Logo
 	MaxConcurrentRenders int
 	AdmissionWait        time.Duration
 	RenderTimeout        time.Duration
@@ -151,6 +152,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	pdf, err := s.render(ctx, req.Engine, renderer.Options{
 		CompanyName:  s.cfg.CompanyName,
 		PrimaryColor: s.cfg.CompanyRGB,
+		Logo:         s.cfg.Logo,
 	}, req.Payload)
 	cancel()
 	renderDuration.WithLabelValues(string(req.Engine)).Observe(time.Since(renderStart).Seconds())

@@ -17,7 +17,12 @@
     padding: 10px 8px;
     font-size: 16pt;
     margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
+  .header .logo { height: 26px; width: auto; }
   .meta { margin-bottom: 12px; }
   .meta-row { display: flex; }
   .meta-row .label { width: 80px; font-size: 10pt; }
@@ -46,7 +51,10 @@
 </head>
 <body>
   <div>
-    <div class="header">{{.CompanyName}}</div>
+    <div class="header">
+      <span>{{.CompanyName}}</span>
+      {{if .Logo}}<img class="logo" src="{{.Logo}}" alt="">{{end}}
+    </div>
 
     <div class="meta">
       {{if .InvoiceNum}}<div class="meta-row"><span class="label">Invoice #:</span><span class="value">{{.InvoiceNum}}</span></div>{{end}}

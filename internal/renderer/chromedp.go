@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"math"
 	"os"
 	"strings"
@@ -36,6 +37,14 @@ type htmlData struct {
 	Tax          string
 	Total        string
 	Notes        string
+	Logo         template.URL
+}
+
+func logoDataURI(l *Logo) template.URL {
+	if l == nil {
+		return ""
+	}
+	return template.URL(l.DataURI)
 }
 
 func generateHTML(parent context.Context, opts Options, payload json.RawMessage) ([]byte, error) {
@@ -44,52 +53,7 @@ func generateHTML(parent context.Context, opts Options, payload json.RawMessage)
 		return nil, err
 	}
 
-	color := fmt.Sprintf("#%02x%02x%02x", opts.PrimaryColor[0], opts.PrimaryColor[1], opts.PrimaryColor[2])
-
-	billTo := strVal(data, "bill_to_name")
-	if billTo == "" {
-		billTo = strVal(data, "bill_to")
-	}
-
-	items := getItems(data)
-	var htmlItems []htmlItem
-	var subtotal float64
-	for _, it := range items {
-		if it.Description == "" {
-			continue
-		}
-		amount := it.Amount
-		if amount == 0 {
-			amount = it.Quantity * it.Rate
-		}
-		subtotal += amount
-		htmlItems = append(htmlItems, htmlItem{
-			Description: sanitize(it.Description),
-			Quantity:    fmt.Sprintf("%.2f", it.Quantity),
-			Rate:        fmt.Sprintf("%.2f", it.Rate),
-			Amount:      fmt.Sprintf("%.2f", amount),
-		})
-	}
-
-	taxRate := floatVal(data, "tax_rate")
-	tax := subtotal * taxRate / 100
-	total := subtotal + tax
-
-	hd := htmlData{
-		CompanyName:  sanitize(opts.CompanyName),
-		PrimaryColor: color,
-		InvoiceNum:   strVal(data, "invoice_number"),
-		Date:         strVal(data, "date"),
-		DueDate:      strVal(data, "due_date"),
-		BillTo:       sanitize(billTo),
-		BillToAddr:   sanitize(strVal(data, "bill_to_address")),
-		Items:        htmlItems,
-		Subtotal:     fmt.Sprintf("%.2f", subtotal),
-		TaxRate:      math.Round(taxRate*100) / 100,
-		Tax:          fmt.Sprintf("%.2f", tax),
-		Total:        fmt.Sprintf("%.2f", total),
-		Notes:        sanitize(strVal(data, "notes")),
-	}
+	hd := buildHTMLData(data, opts)
 
 	var buf strings.Builder
 	if err := templates.Default().HTML.Execute(&buf, hd); err != nil {
@@ -135,6 +99,55 @@ func generateHTML(parent context.Context, opts Options, payload json.RawMessage)
 	}
 
 	return pdfData, nil
+}
+
+// buildHTMLData maps the raw payload and render options into the theme context.
+func buildHTMLData(data map[string]json.RawMessage, opts Options) htmlData {
+	billTo := strVal(data, "bill_to_name")
+	if billTo == "" {
+		billTo = strVal(data, "bill_to")
+	}
+
+	items := getItems(data)
+	var htmlItems []htmlItem
+	var subtotal float64
+	for _, it := range items {
+		if it.Description == "" {
+			continue
+		}
+		amount := it.Amount
+		if amount == 0 {
+			amount = it.Quantity * it.Rate
+		}
+		subtotal += amount
+		htmlItems = append(htmlItems, htmlItem{
+			Description: sanitize(it.Description),
+			Quantity:    fmt.Sprintf("%.2f", it.Quantity),
+			Rate:        fmt.Sprintf("%.2f", it.Rate),
+			Amount:      fmt.Sprintf("%.2f", amount),
+		})
+	}
+
+	taxRate := floatVal(data, "tax_rate")
+	tax := subtotal * taxRate / 100
+	total := subtotal + tax
+
+	return htmlData{
+		CompanyName:  sanitize(opts.CompanyName),
+		PrimaryColor: fmt.Sprintf("#%02x%02x%02x", opts.PrimaryColor[0], opts.PrimaryColor[1], opts.PrimaryColor[2]),
+		InvoiceNum:   strVal(data, "invoice_number"),
+		Date:         strVal(data, "date"),
+		DueDate:      strVal(data, "due_date"),
+		BillTo:       sanitize(billTo),
+		BillToAddr:   sanitize(strVal(data, "bill_to_address")),
+		Items:        htmlItems,
+		Subtotal:     fmt.Sprintf("%.2f", subtotal),
+		TaxRate:      math.Round(taxRate*100) / 100,
+		Tax:          fmt.Sprintf("%.2f", tax),
+		Total:        fmt.Sprintf("%.2f", total),
+		Notes:        sanitize(strVal(data, "notes")),
+		Logo:         logoDataURI(opts.Logo),
+	}
 }
 
 // browserPool keeps one Chromium process per replica. Every render gets a fresh
