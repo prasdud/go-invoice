@@ -49,7 +49,9 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		BaseURL:              getEnv("BASE_URL", "http://localhost:8080"),
+		// RENDER_EXTERNAL_URL is set automatically by Render (and similar PaaS)
+		// so returned invoice URLs point at the deployed service by default.
+		BaseURL:              getEnv("BASE_URL", getEnv("RENDER_EXTERNAL_URL", "http://localhost:8080")),
 		Port:                 port,
 		APIKey:               getEnv("API_KEY", ""),
 		CompanyName:          getEnv("COMPANY_NAME", "Invoice"),

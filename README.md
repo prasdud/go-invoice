@@ -152,6 +152,19 @@ Line amount = `amount` or `quantity x rate`; totals are computed from these.
 
 Object lifecycle and expiry are configured in your storage console, not in this service.
 
+## Deploying
+
+A Render blueprint ships in `render.yaml`:
+
+1. Render Dashboard → **New +** → **Blueprint** → select this repository.
+2. Fill the prompted secrets (`API_KEY`, `S3_*`) and Apply.
+3. Done — the service URL is picked up automatically (`RENDER_EXTERNAL_URL`). Set `BASE_URL`
+   explicitly only for a custom domain.
+
+The blueprint defaults to the `starter` plan (512 MB) which is fine for the `basic` engine;
+switch to `standard` (2 GB) if you use the `html` engine (Chromium). Pushes to `main`
+redeploy automatically.
+
 ## Development
 
 ```bash
