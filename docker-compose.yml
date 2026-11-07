@@ -1,16 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 2s
-      timeout: 2s
-      retries: 5
-
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -34,11 +22,8 @@ services:
       - "8080:8080"
     env_file: .env
     depends_on:
-      redis:
-        condition: service_healthy
       minio:
         condition: service_healthy
 
 volumes:
-  redis_data:
   minio_data:

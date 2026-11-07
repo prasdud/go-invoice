@@ -2,8 +2,10 @@ package renderer
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -13,6 +15,7 @@ import (
 	"unicode"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/prasdud/go-invoice/internal/domain"
 )
 
 //go:embed DejaVuSans.ttf
@@ -48,9 +51,30 @@ type item struct {
 	Amount      float64 `json:"amount"`
 }
 
-func Generate(opts Options, payload json.RawMessage) ([]byte, error) {
+// ErrCJKRequiresHTML is returned when the basic engine is asked to render CJK
+// text. The embedded DejaVu font has no CJK glyphs, so the html engine (headless
+// Chromium with system CJK fonts) must be used instead.
+var ErrCJKRequiresHTML = errors.New(`payload contains CJK text; use engine "html"`)
+
+// Generate renders the payload with the caller-selected engine. Engine must be
+// one of domain.EngineBasic or domain.EngineHTML (validated by the API layer).
+func Generate(ctx context.Context, engine domain.Engine, opts Options, payload json.RawMessage) ([]byte, error) {
+	switch engine {
+	case domain.EngineBasic:
+		return generateBasic(ctx, opts, payload)
+	case domain.EngineHTML:
+		return generateHTML(ctx, opts, payload)
+	default:
+		return nil, fmt.Errorf("renderer: unknown engine %q", engine)
+	}
+}
+
+func generateBasic(ctx context.Context, opts Options, payload json.RawMessage) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if hasCJK(payload) {
-		return generateChrome(opts, payload)
+		return nil, ErrCJKRequiresHTML
 	}
 
 	var data map[string]json.RawMessage

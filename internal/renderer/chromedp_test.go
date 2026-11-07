@@ -1,9 +1,12 @@
 package renderer
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/prasdud/go-invoice/internal/domain"
 )
 
 func TestChromeCJK(t *testing.T) {
@@ -21,7 +24,7 @@ func TestChromeCJK(t *testing.T) {
 		"notes": "お支払いは30日以内にお願いします。\nThank you for your business."
 	}`)
 
-	pdf, err := Generate(Options{
+	pdf, err := Generate(context.Background(), domain.EngineHTML, Options{
 		CompanyName:  "CJK Test 株式会社",
 		PrimaryColor: [3]int{180, 40, 40},
 	}, payload)

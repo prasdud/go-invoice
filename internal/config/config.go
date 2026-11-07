@@ -7,18 +7,21 @@ import (
 )
 
 type Config struct {
-	BaseURL        string
-	Port           int
-	RedisURL       string
-	S3Endpoint     string
-	S3Region       string
-	S3Bucket       string
-	S3AccessKey    string
-	S3SecretKey    string
-	S3UsePathStyle bool
-	SQLitePath     string
-	APIKey         string
-	AdminKey       string
+	BaseURL              string
+	Port                 int
+	APIKey               string
+	CompanyName          string
+	CompanyRGB           [3]int
+	MaxConcurrentRenders int
+	AdmissionWaitMS      int
+	RenderTimeoutSeconds int
+	LogLevel             string
+	S3Endpoint           string
+	S3Region             string
+	S3Bucket             string
+	S3AccessKey          string
+	S3SecretKey          string
+	S3UsePathStyle       bool
 }
 
 func Load() (*Config, error) {
@@ -26,23 +29,55 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	cfg := &Config{
-		BaseURL:        getEnv("BASE_URL", "http://localhost:8080"),
-		Port:           port,
-		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
-		S3Endpoint:     getEnv("S3_ENDPOINT", "http://localhost:9000"),
-		S3Region:       getEnv("S3_REGION", "us-east-1"),
-		S3Bucket:       getEnv("S3_BUCKET", "invoices"),
-		S3AccessKey:    getEnv("S3_ACCESS_KEY", "minioadmin"),
-		S3SecretKey:    getEnv("S3_SECRET_KEY", "minioadmin"),
-		S3UsePathStyle: getEnvBool("S3_USE_PATH_STYLE", true),
-		SQLitePath:     getEnv("SQLITE_PATH", "./data/invoices.db"),
-		APIKey:         getEnv("API_KEY", ""),
-		AdminKey:       getEnv("ADMIN_KEY", ""),
+	maxRenders, err := getEnvInt("MAX_CONCURRENT_RENDERS", 16)
+	if err != nil {
+		return nil, err
+	}
+	admissionWait, err := getEnvInt("ADMISSION_WAIT_MS", 1000)
+	if err != nil {
+		return nil, err
+	}
+	renderTimeout, err := getEnvInt("RENDER_TIMEOUT_SECONDS", 10)
+	if err != nil {
+		return nil, err
+	}
+	rgb, err := parseColor(getEnv("COMPANY_COLOR", "284878"))
+	if err != nil {
+		return nil, fmt.Errorf("COMPANY_COLOR: %w", err)
 	}
 
-	return cfg, nil
+	return &Config{
+		BaseURL:              getEnv("BASE_URL", "http://localhost:8080"),
+		Port:                 port,
+		APIKey:               getEnv("API_KEY", ""),
+		CompanyName:          getEnv("COMPANY_NAME", "Invoice"),
+		CompanyRGB:           rgb,
+		MaxConcurrentRenders: maxRenders,
+		AdmissionWaitMS:      admissionWait,
+		RenderTimeoutSeconds: renderTimeout,
+		LogLevel:             getEnv("LOG_LEVEL", "info"),
+		S3Endpoint:           getEnv("S3_ENDPOINT", "http://localhost:9000"),
+		S3Region:             getEnv("S3_REGION", "us-east-1"),
+		S3Bucket:             getEnv("S3_BUCKET", "invoices"),
+		S3AccessKey:          getEnv("S3_ACCESS_KEY", "minioadmin"),
+		S3SecretKey:          getEnv("S3_SECRET_KEY", "minioadmin"),
+		S3UsePathStyle:       getEnvBool("S3_USE_PATH_STYLE", true),
+	}, nil
+}
+
+func parseColor(s string) ([3]int, error) {
+	var rgb [3]int
+	if len(s) != 6 {
+		return rgb, fmt.Errorf("expected 6 hex digits, got %q", s)
+	}
+	for i := range rgb {
+		v, err := strconv.ParseUint(s[i*2:i*2+2], 16, 8)
+		if err != nil {
+			return rgb, fmt.Errorf("invalid hex %q", s)
+		}
+		rgb[i] = int(v)
+	}
+	return rgb, nil
 }
 
 func getEnv(key, fallback string) string {

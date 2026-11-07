@@ -32,10 +32,12 @@ write partial artifacts to storage; upload happens only after a successful rende
 The engine MUST be chosen by the caller via the API's `engine` field. The renderer MUST NOT
 inspect payload content to change engines. `basic` is the default.
 
-#### Scenario: No sniffing
+#### Scenario: No engine switching
 
 - **WHEN** a payload contains CJK text and the caller chose `basic`
-- **THEN** the basic engine renders it (stripping non-embeddable glyphs per sanitization rules)
+- **THEN** the request fails with `422 invalid_payload` and a message directing the caller to
+  the `html` engine
+- **AND** the service does not silently switch engines or emit glyph-less output
 
 ### Requirement: Basic Engine
 
@@ -58,6 +60,11 @@ MUST render without error when optional fields are missing.
 
 - **WHEN** fields like `due_date` or `notes` are absent
 - **THEN** the invoice renders cleanly without placeholder artifacts
+
+#### Scenario: CJK payload rejected
+
+- **WHEN** the payload contains Han, Kana, or Hangul text
+- **THEN** the engine returns an error instead of emitting an invoice with missing glyphs
 
 ### Requirement: HTML Engine
 

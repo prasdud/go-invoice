@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -30,9 +31,10 @@ func benchCase(b *testing.B, name string) {
 	}
 
 	opts := Options{CompanyName: tc.Company, PrimaryColor: tc.Color}
+	engine := engineOf(*tc)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if _, err := Generate(opts, tc.Payload); err != nil {
+		if _, err := Generate(context.Background(), engine, opts, tc.Payload); err != nil {
 			b.Fatal(err)
 		}
 	}

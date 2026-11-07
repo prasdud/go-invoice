@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/prasdud/go-invoice/internal/domain"
 	"github.com/prasdud/go-invoice/internal/renderer"
 )
 
@@ -14,6 +16,7 @@ type testCase struct {
 	Name    string          `json:"name"`
 	Company string          `json:"company"`
 	Color   [3]int          `json:"color"`
+	Engine  domain.Engine   `json:"engine"`
 	Payload json.RawMessage `json:"payload"`
 }
 
@@ -33,7 +36,12 @@ func main() {
 	for _, tc := range cases {
 		log.Printf("generating %s...", tc.Name)
 
-		pdf, err := renderer.Generate(renderer.Options{
+		engine := tc.Engine
+		if engine == "" {
+			engine = domain.EngineBasic
+		}
+
+		pdf, err := renderer.Generate(context.Background(), engine, renderer.Options{
 			CompanyName:  tc.Company,
 			PrimaryColor: tc.Color,
 		}, tc.Payload)

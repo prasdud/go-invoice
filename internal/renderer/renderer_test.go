@@ -1,12 +1,15 @@
 package renderer
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/prasdud/go-invoice/internal/domain"
 	"github.com/prasdud/go-invoice/internal/storage"
 )
 
@@ -14,7 +17,15 @@ type testCase struct {
 	Name    string          `json:"name"`
 	Company string          `json:"company"`
 	Color   [3]int          `json:"color"`
+	Engine  domain.Engine   `json:"engine"`
 	Payload json.RawMessage `json:"payload"`
+}
+
+func engineOf(tc testCase) domain.Engine {
+	if tc.Engine == "" {
+		return domain.EngineBasic
+	}
+	return tc.Engine
 }
 
 func TestGenerate(t *testing.T) {
@@ -32,7 +43,7 @@ func TestGenerate(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
-			pdf, err := Generate(Options{
+			pdf, err := Generate(context.Background(), engineOf(tc), Options{
 				CompanyName:  tc.Company,
 				PrimaryColor: tc.Color,
 			}, tc.Payload)
@@ -55,21 +66,21 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateEmptyPayload(t *testing.T) {
-	_, err := Generate(Options{CompanyName: "Test"}, json.RawMessage(`{}`))
+	_, err := Generate(context.Background(), domain.EngineBasic, Options{CompanyName: "Test"}, json.RawMessage(`{}`))
 	if err != nil {
 		t.Fatalf("empty payload should not error: %v", err)
 	}
 }
 
 func TestGenerateNilPayload(t *testing.T) {
-	_, err := Generate(Options{CompanyName: "Test"}, json.RawMessage(`null`))
+	_, err := Generate(context.Background(), domain.EngineBasic, Options{CompanyName: "Test"}, json.RawMessage(`null`))
 	if err != nil {
 		t.Fatalf("null payload should not error: %v", err)
 	}
 }
 
 func TestGenerateEmptyItems(t *testing.T) {
-	_, err := Generate(Options{CompanyName: "Test"}, json.RawMessage(`{"items":[]}`))
+	_, err := Generate(context.Background(), domain.EngineBasic, Options{CompanyName: "Test"}, json.RawMessage(`{"items":[]}`))
 	if err != nil {
 		t.Fatalf("empty items should not error: %v", err)
 	}
@@ -80,12 +91,20 @@ func TestGenerateMissingFields(t *testing.T) {
 		"invoice_number": "INV-001",
 		"bill_to": "Someone"
 	}`)
-	pdf, err := Generate(Options{CompanyName: "Test"}, payload)
+	pdf, err := Generate(context.Background(), domain.EngineBasic, Options{CompanyName: "Test"}, payload)
 	if err != nil {
 		t.Fatalf("missing fields should not error: %v", err)
 	}
 	if len(pdf) == 0 {
 		t.Fatal("pdf is empty")
+	}
+}
+
+func TestGenerateBasicRejectsCJK(t *testing.T) {
+	payload := json.RawMessage(`{"bill_to": "株式会社 田中商事"}`)
+	_, err := Generate(context.Background(), domain.EngineBasic, Options{CompanyName: "Test"}, payload)
+	if !errors.Is(err, ErrCJKRequiresHTML) {
+		t.Fatalf("want ErrCJKRequiresHTML, got %v", err)
 	}
 }
 
@@ -97,7 +116,7 @@ func TestGenerateUnicodeEdgeCases(t *testing.T) {
 			{"description": "こんにちは мир hello", "quantity": 1, "rate": 100}
 		]
 	}`)
-	pdf, err := Generate(Options{CompanyName: "Café πr²"}, payload)
+	pdf, err := Generate(context.Background(), domain.EngineHTML, Options{CompanyName: "Café πr²"}, payload)
 	if err != nil {
 		t.Fatalf("unicode payload should not error: %v", err)
 	}

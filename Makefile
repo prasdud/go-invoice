@@ -1,16 +1,16 @@
 .PHONY: dev dev-build down build test tidy vet clean
 
 dev:
+	@[ -f .env ] || cp .env.example .env
 	docker compose up -d
 	@echo "Server:   http://localhost:8080"
 	@echo "MinIO:    http://localhost:9000 (API), http://localhost:9001 (Console)"
-	@echo "Redis:    localhost:6379"
 
 dev-build:
+	@[ -f .env ] || cp .env.example .env
 	docker compose up -d --build
 	@echo "Server:   http://localhost:8080"
 	@echo "MinIO:    http://localhost:9000 (API), http://localhost:9001 (Console)"
-	@echo "Redis:    localhost:6379"
 
 down:
 	docker compose down

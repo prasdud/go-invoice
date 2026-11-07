@@ -8,12 +8,12 @@
 
 ## 1. Repository Trimming
 
-- [ ] 1.1 Trim `internal/config`: remove `REDIS_URL`, `SQLITE_PATH`, `ADMIN_KEY`; add `MAX_CONCURRENT_RENDERS`, `ADMISSION_WAIT_MS`, `RENDER_TIMEOUT_SECONDS`, `COMPANY_NAME`, `COMPANY_COLOR`, `LOG_LEVEL`, `CHROME_PATH`.
-- [ ] 1.2 Trim `internal/domain` to the API surface: request gains optional `id`; `CreateResponse` becomes `{invoice_id, url}`; drop `Status` and `StatusResponse`.
-- [ ] 1.3 Refactor `internal/renderer` behind an engine registry: `Generate(ctx, engine, Options, payload)`; remove `hasCJK` sniffing; register `basic` and `html`.
-- [ ] 1.4 Extend `internal/validate`: payload structure checks (items array shape, numeric quantity/rate/amount, item cap), id format, engine values.
-- [ ] 1.5 Align `Dockerfile` builder Go version with `go.mod` (currently `golang:1.24-alpine` vs `go 1.26`).
-- [ ] 1.6 `docker-compose.yml`: drop the `redis` service and volume; keep MinIO + server. Trim `.env.example`. Make `make dev` work without a committed `.env` (copy `.env.example` when missing).
+- [x] 1.1 Trim `internal/config`: remove `REDIS_URL`, `SQLITE_PATH`, `ADMIN_KEY`; add `MAX_CONCURRENT_RENDERS`, `ADMISSION_WAIT_MS`, `RENDER_TIMEOUT_SECONDS`, `COMPANY_NAME`, `COMPANY_COLOR`, `LOG_LEVEL`, `CHROME_PATH`.
+- [x] 1.2 Trim `internal/domain` to the API surface: request gains optional `id`; `CreateResponse` becomes `{invoice_id, url}`; drop `Status` and `StatusResponse`.
+- [x] 1.3 Refactor `internal/renderer` behind an engine registry: `Generate(ctx, engine, Options, payload)`; remove `hasCJK` sniffing; register `basic` and `html`.
+- [x] 1.4 Extend `internal/validate`: payload structure checks (items array shape, numeric quantity/rate/amount, item cap), id format, engine values.
+- [x] 1.5 Align `Dockerfile` builder Go version with `go.mod` (currently `golang:1.24-alpine` vs `go 1.26`).
+- [x] 1.6 `docker-compose.yml`: drop the `redis` service and volume; keep MinIO + server. Trim `.env.example`. Make `make dev` work without a committed `.env` (copy `.env.example` when missing).
   - Verify: `go build ./...`, `go vet ./...`, `go test ./...`; `docker compose up`; `curl /health` returns ok.
 
 ## 2. Synchronous API

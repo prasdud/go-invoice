@@ -6,39 +6,27 @@ type Engine string
 
 const (
 	EngineBasic Engine = "basic"
+	EngineHTML  Engine = "html"
 )
 
-type Status string
+func (e Engine) Valid() bool {
+	return e == EngineBasic || e == EngineHTML
+}
 
-const (
-	StatusProcessing Status = "processing"
-	StatusDone       Status = "done"
-	StatusFailed     Status = "failed"
-)
-
+// InvoiceRequest is the POST /invoices body. ID is optional; when empty the
+// service generates one. Engine is optional and defaults to basic.
 type InvoiceRequest struct {
-	TemplateUUID string          `json:"template_uuid"`
-	Engine       Engine          `json:"engine"`
-	Payload      json.RawMessage `json:"payload"`
-}
-
-type Invoice struct {
-	ID           string          `json:"id"`
-	TemplateUUID string          `json:"template_uuid"`
-	Engine       Engine          `json:"engine"`
-	Payload      json.RawMessage `json:"payload"`
-	Status       Status          `json:"status"`
-	Error        string          `json:"error,omitempty"`
-	PDFPath      string          `json:"pdf_path,omitempty"`
-}
-
-type StatusResponse struct {
-	Status Status `json:"status"`
-	Error  string `json:"error,omitempty"`
-	URL    string `json:"url,omitempty"`
+	ID      string          `json:"id"`
+	Engine  Engine          `json:"engine"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 type CreateResponse struct {
 	InvoiceID string `json:"invoice_id"`
-	StatusURL string `json:"status_url"`
+	URL       string `json:"url"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+	Code  string `json:"code"`
 }

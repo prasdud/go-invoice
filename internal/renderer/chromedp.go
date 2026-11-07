@@ -45,7 +45,7 @@ type htmlData struct {
 	Notes        string
 }
 
-func generateChrome(opts Options, payload json.RawMessage) ([]byte, error) {
+func generateHTML(parent context.Context, opts Options, payload json.RawMessage) ([]byte, error) {
 	var data map[string]json.RawMessage
 	if err := json.Unmarshal(payload, &data); err != nil {
 		return nil, err
@@ -116,8 +116,12 @@ func generateChrome(opts Options, payload json.RawMessage) ([]byte, error) {
 	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
+	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
+	defer cancelTimeout()
+
+	// Tear the render down when the caller's context ends (request timeout).
+	stop := context.AfterFunc(parent, cancel)
+	defer stop()
 
 	var pdfData []byte
 	err := chromedp.Run(ctx,

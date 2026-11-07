@@ -22,6 +22,7 @@
     "name": "international_unicode",
     "company": "München GmbH",
     "color": [180, 40, 40],
+    "engine": "html",
     "payload": {
       "invoice_number": "INV-2026-002",
       "date": "2026-06-03",

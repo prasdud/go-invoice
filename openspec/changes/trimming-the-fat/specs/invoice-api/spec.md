@@ -152,6 +152,7 @@ and code shown in the scenarios below, and MUST NOT emit codes outside this set.
 | Body over 1 MiB | 413 | `payload_too_large` |
 | Wrong content type | 415 | `unsupported_media_type` |
 | Structurally invalid payload | 422 | `invalid_payload` |
+| CJK payload with basic engine | 422 | `invalid_payload` |
 | Engine failure | 500 | `render_failed` |
 | Render timeout | 500 | `render_timeout` |
 | Upload failed after retries | 502 | `storage_unavailable` |
