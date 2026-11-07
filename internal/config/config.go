@@ -17,6 +17,7 @@ type Config struct {
 	AdmissionWaitMS      int
 	RenderTimeoutSeconds int
 	LogLevel             string
+	Template             string
 	S3Endpoint           string
 	S3Region             string
 	S3Bucket             string
@@ -58,6 +59,7 @@ func Load() (*Config, error) {
 		AdmissionWaitMS:      admissionWait,
 		RenderTimeoutSeconds: renderTimeout,
 		LogLevel:             getEnv("LOG_LEVEL", "info"),
+		Template:             getEnv("TEMPLATE", "default"),
 		S3Endpoint:           getEnv("S3_ENDPOINT", "http://localhost:9000"),
 		S3Region:             getEnv("S3_REGION", "us-east-1"),
 		S3Bucket:             getEnv("S3_BUCKET", "invoices"),

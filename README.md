@@ -101,8 +101,8 @@ Branding is configuration:
 | `COMPANY_LOGO` | Optional path to a PNG or JPEG logo (max 1 MiB), shown in the header on both engines |
 
 Adding a theme = one Go file + one HTML asset in `internal/renderer/templates/` (see
-`default.go` + `default.html`), then rebuild. Themes are compiled in on purpose: adding theme
-selection is a follow-up when a second theme exists.
+`default.go` + `default.html`), then rebuild and select it with `TEMPLATE=<name>`; an unknown
+name fails startup. Themes are compiled in on purpose — no runtime template files.
 
 ## Benchmarks
 
@@ -142,6 +142,7 @@ Line amount = `amount` or `quantity x rate`; totals are computed from these.
 | `PORT` | `8080` | HTTP port |
 | `API_KEY` | (required) | POST authentication |
 | `COMPANY_NAME` / `COMPANY_COLOR` / `COMPANY_LOGO` | `Invoice` / `284878` / (none) | Header branding; logo is a PNG/JPEG path (≤1 MiB) |
+| `TEMPLATE` | `default` | Compiled-in theme name; unknown values fail startup |
 | `MAX_CONCURRENT_RENDERS` | `16` | Render semaphore size |
 | `ADMISSION_WAIT_MS` | `1000` | Max wait for a render slot before 503 |
 | `RENDER_TIMEOUT_SECONDS` | `10` | Per-render deadline |

@@ -16,6 +16,7 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 	"github.com/prasdud/go-invoice/internal/domain"
+	"github.com/prasdud/go-invoice/internal/renderer/templates"
 )
 
 //go:embed DejaVuSans.ttf
@@ -43,6 +44,7 @@ type Options struct {
 	CompanyName  string
 	PrimaryColor [3]int
 	Logo         *Logo
+	Theme        templates.Theme
 }
 
 type item struct {

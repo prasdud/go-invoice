@@ -16,6 +16,7 @@ import (
 	"github.com/prasdud/go-invoice/internal/api"
 	"github.com/prasdud/go-invoice/internal/config"
 	"github.com/prasdud/go-invoice/internal/renderer"
+	"github.com/prasdud/go-invoice/internal/renderer/templates"
 	"github.com/prasdud/go-invoice/internal/storage"
 )
 
@@ -58,12 +59,19 @@ func main() {
 		logger.Info("logo loaded", "path", cfg.CompanyLogo, "type", logo.Type, "bytes", len(logo.Bytes))
 	}
 
+	theme, ok := templates.Get(cfg.Template)
+	if !ok {
+		log.Fatalf("config: unknown TEMPLATE %q", cfg.Template)
+	}
+	logger.Info("theme loaded", "name", theme.Name)
+
 	srv := api.New(api.Config{
 		BaseURL:              cfg.BaseURL,
 		APIKey:               cfg.APIKey,
 		CompanyName:          cfg.CompanyName,
 		CompanyRGB:           cfg.CompanyRGB,
 		Logo:                 logo,
+		Theme:                theme,
 		MaxConcurrentRenders: cfg.MaxConcurrentRenders,
 		AdmissionWait:        time.Duration(cfg.AdmissionWaitMS) * time.Millisecond,
 		RenderTimeout:        time.Duration(cfg.RenderTimeoutSeconds) * time.Second,

@@ -27,6 +27,16 @@ go.work.sum
 # env file
 .env
 
+# Local-only be10x test theme and logo (not tracked)
+internal/renderer/templates/be10x.go
+internal/renderer/templates/be10x.html
+/be10x-logo.png
+/be10x-logo.jpg
+/be10x-logo.jpeg
+/logo.png
+/logo.jpg
+/logo.jpeg
+
 # Generated PDF output from tests
 /output/
 

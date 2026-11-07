@@ -19,6 +19,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/prasdud/go-invoice/internal/domain"
 	"github.com/prasdud/go-invoice/internal/renderer"
+	"github.com/prasdud/go-invoice/internal/renderer/templates"
 	"github.com/prasdud/go-invoice/internal/storage"
 	"github.com/prasdud/go-invoice/internal/validate"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,6 +42,7 @@ type Config struct {
 	CompanyName          string
 	CompanyRGB           [3]int
 	Logo                 *renderer.Logo
+	Theme                templates.Theme
 	MaxConcurrentRenders int
 	AdmissionWait        time.Duration
 	RenderTimeout        time.Duration
@@ -153,6 +155,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		CompanyName:  s.cfg.CompanyName,
 		PrimaryColor: s.cfg.CompanyRGB,
 		Logo:         s.cfg.Logo,
+		Theme:        s.cfg.Theme,
 	}, req.Payload)
 	cancel()
 	renderDuration.WithLabelValues(string(req.Engine)).Observe(time.Since(renderStart).Seconds())

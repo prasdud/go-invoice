@@ -56,7 +56,11 @@ func generateHTML(parent context.Context, opts Options, payload json.RawMessage)
 	hd := buildHTMLData(data, opts)
 
 	var buf strings.Builder
-	if err := templates.Default().HTML.Execute(&buf, hd); err != nil {
+	theme := opts.Theme
+	if theme.HTML == nil {
+		theme = templates.Default()
+	}
+	if err := theme.HTML.Execute(&buf, hd); err != nil {
 		return nil, fmt.Errorf("renderer: template: %w", err)
 	}
 

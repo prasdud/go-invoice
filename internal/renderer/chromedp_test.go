@@ -3,10 +3,12 @@ package renderer
 import (
 	"context"
 	"encoding/json"
+	"html/template"
 	"os"
 	"testing"
 
 	"github.com/prasdud/go-invoice/internal/domain"
+	"github.com/prasdud/go-invoice/internal/renderer/templates"
 )
 
 func TestChromeCJK(t *testing.T) {
@@ -61,5 +63,16 @@ func TestHTMLRecoversAfterBrowserFailure(t *testing.T) {
 
 	if _, err := Generate(ctx, domain.EngineHTML, opts, payload); err != nil {
 		t.Fatalf("render after failure: %v", err)
+	}
+}
+
+func TestGenerateHTMLUsesConfiguredTheme(t *testing.T) {
+	bad := templates.Theme{
+		Name: "bad",
+		HTML: template.Must(template.New("bad").Parse(`<html><body>{{.NoSuchField}}</body></html>`)),
+	}
+	_, err := Generate(context.Background(), domain.EngineHTML, Options{Theme: bad}, json.RawMessage(`{}`))
+	if err == nil {
+		t.Fatal("expected error from the configured theme")
 	}
 }
