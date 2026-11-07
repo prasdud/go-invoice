@@ -23,5 +23,5 @@
 
 ## 4. Validation
 
-- [ ] 4.1 Benchmarks before/after within noise (`go test ./internal/renderer -bench . -run '^$'`).
-- [ ] 4.2 OpenSpec validation (strict) plus `go build ./...`, `go vet ./...`, `go test ./...`.
+- [x] 4.1 Benchmarks before/after within noise (`go test ./internal/renderer -bench . -run '^$'`). (basic 2.42ms vs 2.51ms baseline; html ~80ms vs ~74ms, within noise)
+- [x] 4.2 OpenSpec validation (strict) plus `go build ./...`, `go vet ./...`, `go test ./...`.
