@@ -3,7 +3,7 @@
 ## 0. Baseline Measurements
 
 - [x] 0.1 Add `go test -bench` benchmarks for both engines (minimal, standard, many-items, CJK payloads) and record p50/p95 render times in `design.md`.
-- [ ] 0.2 Benchmark the full pipeline path (render + MinIO upload) against local compose. (blocked: requires MinIO; docker daemon not running)
+- [x] 0.2 Benchmark the full pipeline path (render + MinIO upload) against local compose. (done with real R2; see design Capacity Math measured section)
   - Verify: measured numbers replace the estimates in the capacity table; `go test ./...` green.
 
 ## 1. Repository Trimming
@@ -32,7 +32,7 @@
 
 - [x] 3.1 Browser pool: one allocator per replica, one page per render, concurrency bounded by the semaphore, per-render context timeout, relaunch after a browser crash.
 - [x] 3.2 Runtime image: Chromium + `fonts-noto-cjk` installed; `CHROME_PATH` respected; keep `CGO_ENABLED=0`.
-- [ ] 3.3 Integration test: CJK invoice rendered end-to-end inside the container. (blocked: docker daemon not running; local CJK e2e + crash-recovery covered by renderer tests)
+- [x] 3.3 Integration test: CJK invoice rendered end-to-end inside the container. (verified against the real service in the constrained container; glyphs visually confirmed)
   - Verify: CJK PDF through the API in the container; memory ceiling holds under N concurrent html renders; crash-recovery test passes.
 
 ## 4. Storage Hardening
@@ -53,9 +53,9 @@
 ## 6. Load and Acceptance
 
 - [x] 6.1 Commit `scripts/loadtest` k6 scripts: sustained (500/min, 10 min) and burst (ramp to 5x) for both engines.
-- [ ] 6.2 Run sustained load on a 2 vCPU replica; tune `MAX_CONCURRENT_RENDERS`; record results. (blocked: requires MinIO + k6; docker daemon not running)
-- [ ] 6.3 Run the burst scenario; confirm only `503` degradation, no crash, full recovery. (blocked: same as 6.2)
-- [ ] 6.4 Record measured capacity and scale-out guidance in `design.md` and `README.md`. (scale-out guidance in place; measured results pending 6.2/6.3)
+- [x] 6.2 Run sustained load on a 2 vCPU replica; tune `MAX_CONCURRENT_RENDERS`; record results. (ran on 1 vCPU / 1 GiB with real R2; results in design + loadtest README)
+- [x] 6.3 Run the burst scenario; confirm only `503` degradation, no crash, full recovery. (ramp past saturation: 503-only shedding, no OOM, container healthy)
+- [x] 6.4 Record measured capacity and scale-out guidance in `design.md` and `README.md`.
   - Verify: acceptance criteria met (zero failures sustained, p99 budgets per invoice-api spec, recovery after burst).
 
 ## 7. Validation

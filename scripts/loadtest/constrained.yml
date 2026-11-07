@@ -1,9 +1,9 @@
-# Override that approximates a small production replica (2 vCPU / 2 GiB).
+# Override that approximates a minimal production replica (1 vCPU / 1 GiB).
 #
 # Usage:
 #   docker compose -f docker-compose.yml -f scripts/loadtest/constrained.yml up -d --build
 #   go run ./cmd/stress -steps 1,2,4,8,16,32,64 -duration 15s
 services:
   server:
-    cpus: 2
-    mem_limit: 2g
+    cpus: 1
+    mem_limit: 1g

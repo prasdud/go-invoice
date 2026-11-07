@@ -25,9 +25,7 @@ ENGINE=html k6 run -e API_KEY=changeme -e ENGINE=html scripts/loadtest/sustained
 
 ## Recorded results
 
-Run on a single 2 vCPU replica and record the numbers here and in the design doc
-(`openspec/changes/trimming-the-fat/design.md`, Capacity Math):
-
-| Date | Engine | Result | p50 | p99 | Notes |
-|---|---|---|---|---|---|
-| _(pending)_ | | | | | |
+| Date | Box | Engine | Result | p50 | p99 | Notes |
+|---|---|---|---|---|---|---|
+| 2026-11-07 | 1 vCPU / 1 GiB container | basic | 1,820/min best; zero errors to c=32; 503 only at c=64 | ~525ms | ~1.1s at saturation | real R2; upload mean 507ms dominates |
+| 2026-11-07 | 1 vCPU / 1 GiB container | html + CJK | 284/min best (c=4); declines under load | ~690ms | 4.3-7.7s | Chromium CPU-bound on 1 vCPU; 503 from c=32 |

@@ -48,6 +48,28 @@ With `MAX_CONCURRENT_RENDERS=16` (default, tuned in task 6.2):
 
 Scale-out is horizontal: replicas are identical and interchangeable.
 
+### Measured against real R2 (2026-11-07)
+
+1 vCPU / 1 GiB server container, real Cloudflare R2 bucket, in-network load client
+(closed-loop ramp by concurrency, 15s per step; `cmd/stress`):
+
+| Run | Render mean | Upload mean | Best sustained | Shedding | Notes |
+|---|---|---|---|---|---|
+| basic | 9ms | 507ms | ~1,820/min | none until c=64 | p99 ~1.1s at saturation; ~30MB RSS flat |
+| html+cjk | 1,617ms | 568ms | ~284/min | 503 from c=32 | CPU-bound on 1 vCPU; throughput declines past c=4 |
+
+Implications:
+
+- Upload latency to R2 dominates (~500ms from this location): throughput ≈
+  `MAX_CONCURRENT_RENDERS / (render + upload)`. With the default 16 slots that is
+  ~1,800/min for the basic engine regardless of the renderer.
+- The 500/min target has ~3.6x headroom on this replica; at target arrival rate
+  (~5 concurrent) p99 is 0.7-0.9s, inside the basic budget.
+- Raise `MAX_CONCURRENT_RENDERS` (e.g. 64) to scale basic throughput ~4x; render CPU is
+  ~0.3 core at 1,800/min. The html engine needs more cores: one vCPU starves Chromium.
+- An R2 location hint closer to the caller cuts upload latency and multiplies throughput
+  proportionally. Objects left behind by a full ramp: ~2k, ~40MB.
+
 ## Architecture
 
 ```
