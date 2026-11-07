@@ -61,16 +61,31 @@ exposed; there are no redirects.
 All errors are `{"error": "...", "code": "..."}` — see
 `openspec/changes/trimming-the-fat/specs/invoice-api/spec.md` for the full mapping.
 
-## Engines
+## Engines — which one to use
 
-| Engine | Use for | Performance |
+Every request picks an engine. **Rule of thumb: CJK text (Chinese, Japanese, Korean) must use
+`html`; everything else should use `basic`.**
+
+| | `basic` (default) | `html` |
 |---|---|---|
-| `basic` (default) | Latin/Greek/Cyrillic invoices | ~2.5ms render, pure Go |
-| `html` | CJK (Han/Kana/Hangul) and rich layouts | ~74ms render, headless Chromium |
+| Use for | Latin, Greek, Cyrillic text | Chinese / Japanese / Korean text |
+| Speed | ~2.5ms render — ~7,300 invoices/min on a 1 vCPU replica | ~74ms render on multi-core; needs 2+ vCPUs (~25x slower than `basic`) |
+| Fonts | One embedded font (DejaVu) — no CJK glyphs | System fonts incl. Noto Sans CJK |
+| Memory | trivial (~30MB) | browser process, hundreds of MB |
 
-The caller picks the engine; the service never sniffs payloads. The `basic` engine rejects CJK
-payloads with `422` (the embedded font has no CJK glyphs) instead of emitting blank text —
-use `html` for those.
+```jsonc
+// Default — omit "engine" entirely, or set it explicitly:
+{ "payload": { "bill_to": "Wayne Enterprises", "items": [/* ... */] } }
+
+// Chinese / Japanese / Korean invoices:
+{ "engine": "html", "payload": { "bill_to": "株式会社 田中商事", "items": [/* ... */] } }
+```
+
+The caller picks the engine; the service never sniffs payloads (a silent 25x cost switch would
+make capacity unpredictable). Safety net: `basic` never prints blank glyphs — a CJK payload
+sent to `basic` fails with `422 invalid_payload` and the message
+`payload contains CJK text; use engine "html"`, so it is safe to retry the same invoice with
+`engine: "html"`.
 
 ## Benchmarks
 
