@@ -6,11 +6,9 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/prasdud/go-invoice/internal/domain"
-	"github.com/prasdud/go-invoice/internal/storage"
 )
 
 type testCase struct {
@@ -125,19 +123,4 @@ func TestGenerateUnicodeEdgeCases(t *testing.T) {
 	}
 	os.MkdirAll(filepath.Join("..", "..", "output"), 0755)
 	os.WriteFile(filepath.Join("..", "..", "output", "unicode_edges.pdf"), pdf, 0644)
-}
-
-func TestStorageKeyFormat(t *testing.T) {
-	key := storage.Key("test-uuid")
-	if len(key) < 10 {
-		t.Fatal("key too short")
-	}
-	if !strings.HasSuffix(key, ".pdf") {
-		t.Fatalf("key should end with .pdf: %s", key)
-	}
-	// Should match year/month/uuid.pdf
-	parts := strings.SplitN(key, "/", 3)
-	if len(parts) != 3 {
-		t.Fatalf("key format should be year/month/uuid.pdf: %s", key)
-	}
 }

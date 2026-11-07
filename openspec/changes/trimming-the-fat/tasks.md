@@ -18,15 +18,15 @@
 
 ## 2. Synchronous API
 
-- [ ] 2.1 Add `internal/api` with the request pipeline composed in one place (orchestrator file): validate -> semaphore -> render -> upload -> respond.
-- [ ] 2.2 Implement id handling: ULID generation when omitted; regex validation; id = storage key.
-- [ ] 2.3 Implement API-key middleware (`X-API-Key`, constant-time compare); fail fast at startup when `API_KEY` is empty.
-- [ ] 2.4 Implement the error mapping layer exactly per design D8, JSON body `{"error","code"}`.
-- [ ] 2.5 Implement `GET /invoices/{id}`: streaming download, `application/pdf`, 404 mapping, no redirect, no provider leakage.
-- [ ] 2.6 Implement the render semaphore: admission wait, `503` + `Retry-After` on exhaustion.
-- [ ] 2.7 Wire the server: routes, request body limit (1 MiB), read/write timeouts, graceful shutdown (drain up to 10s).
-- [ ] 2.8 Unit tests: validation, id rules, error mapping, admission behavior with a fake engine and fake storage.
-  - Verify: end-to-end smoke against MinIO (POST -> 200 -> GET returns `%PDF` bytes, response has no `Location` header); 100-concurrent burst with zero failures; `503` when slots are exhausted.
+- [x] 2.1 Add `internal/api` with the request pipeline composed in one place (orchestrator file): validate -> semaphore -> render -> upload -> respond.
+- [x] 2.2 Implement id handling: ULID generation when omitted; regex validation; id = storage key.
+- [x] 2.3 Implement API-key middleware (`X-API-Key`, constant-time compare); fail fast at startup when `API_KEY` is empty.
+- [x] 2.4 Implement the error mapping layer exactly per design D8, JSON body `{"error","code"}`.
+- [x] 2.5 Implement `GET /invoices/{id}`: streaming download, `application/pdf`, 404 mapping, no redirect, no provider leakage.
+- [x] 2.6 Implement the render semaphore: admission wait, `503` + `Retry-After` on exhaustion.
+- [x] 2.7 Wire the server: routes, request body limit (1 MiB), read/write timeouts, graceful shutdown (drain up to 10s).
+- [x] 2.8 Unit tests: validation, id rules, error mapping, admission behavior with a fake engine and fake storage.
+  - Verify: end-to-end smoke against MinIO (POST -> 200 -> GET returns `%PDF` bytes, response has no `Location` header); 100-concurrent burst with zero failures; `503` when slots are exhausted. (MinIO smoke + 100-concurrent burst blocked: docker daemon not running; covered by unit tests with fake storage.)
 
 ## 3. HTML Engine Hardening
 

@@ -23,6 +23,11 @@ func fail(code, format string, args ...any) *Error {
 
 var idRe = regexp.MustCompile(`^[A-Za-z0-9_-]{22,64}$`)
 
+// ValidID reports whether s is a well-formed invoice id.
+func ValidID(s string) bool {
+	return idRe.MatchString(s)
+}
+
 const MaxItems = 200
 
 // InvoiceRequest validates the request envelope. r.Engine must already be
