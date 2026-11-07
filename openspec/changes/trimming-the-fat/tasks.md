@@ -37,10 +37,10 @@
 
 ## 4. Storage Hardening
 
-- [ ] 4.1 Upload: content type `application/pdf`, two bounded retries with backoff, errors mapped to `502`.
-- [ ] 4.2 Download: streaming get, body always closed, `Content-Length` passed through when known.
-- [ ] 4.3 Bucket bootstrap: `HeadBucket` then create when missing; warn-only on failure.
-  - Verify: integration tests green; stopping MinIO mid-run yields `502` for POST and `404`/`502` posture for GET per design.
+- [x] 4.1 Upload: content type `application/pdf`, two bounded retries with backoff, errors mapped to `502`.
+- [x] 4.2 Download: streaming get, body always closed, `Content-Length` passed through when known.
+- [x] 4.3 Bucket bootstrap: `HeadBucket` then create when missing; warn-only on failure.
+  - Verify: integration tests green; stopping MinIO mid-run yields `502` for POST and `404`/`502` posture for GET per design. (Fake-S3 tests cover retries, not-found mapping, bootstrap; live MinIO check blocked: docker daemon not running.)
 
 ## 5. Operations
 

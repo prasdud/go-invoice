@@ -42,6 +42,12 @@ func main() {
 		log.Fatalf("storage: %v", err)
 	}
 
+	bootCtx, cancelBoot := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := store.EnsureBucket(bootCtx); err != nil {
+		logger.Warn("bucket bootstrap failed", "error", err)
+	}
+	cancelBoot()
+
 	srv := api.New(api.Config{
 		BaseURL:              cfg.BaseURL,
 		APIKey:               cfg.APIKey,

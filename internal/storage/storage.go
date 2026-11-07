@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -21,6 +22,7 @@ var ErrNotFound = errors.New("storage: object not found")
 type Client struct {
 	s3     *s3.Client
 	bucket string
+	region string
 }
 
 type Config struct {
@@ -42,7 +44,7 @@ func New(cfg Config) (*Client, error) {
 		))
 	}
 
-	awsCfg, err := config.LoadDefaultConfig(context.Background(), opts...)
+	awsCfg, err := config.LoadDefaultConfig(context.Background(), append(opts, config.WithRetryMaxAttempts(1))...)
 	if err != nil {
 		return nil, fmt.Errorf("storage: load config: %w", err)
 	}
@@ -54,20 +56,63 @@ func New(cfg Config) (*Client, error) {
 		}
 	})
 
-	return &Client{s3: client, bucket: cfg.Bucket}, nil
+	return &Client{s3: client, bucket: cfg.Bucket, region: cfg.Region}, nil
 }
 
-func (c *Client) Upload(ctx context.Context, key string, data []byte, contentType string) error {
-	_, err := c.s3.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(c.bucket),
-		Key:         aws.String(key),
-		Body:        bytes.NewReader(data),
-		ContentType: aws.String(contentType),
-	})
-	if err != nil {
-		return fmt.Errorf("storage: upload %s: %w", key, err)
+// EnsureBucket checks the configured bucket and creates it when missing.
+func (c *Client) EnsureBucket(ctx context.Context) error {
+	_, err := c.s3.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(c.bucket)})
+	if err == nil {
+		return nil
+	}
+	var apiErr smithy.APIError
+	if !errors.As(err, &apiErr) {
+		return fmt.Errorf("storage: head bucket: %w", err)
+	}
+	switch apiErr.ErrorCode() {
+	case "", "NotFound", "NoSuchBucket", "404":
+	default:
+		return fmt.Errorf("storage: head bucket: %w", err)
+	}
+
+	input := &s3.CreateBucketInput{Bucket: aws.String(c.bucket)}
+	if c.region != "" && c.region != "us-east-1" {
+		input.CreateBucketConfiguration = &types.CreateBucketConfiguration{
+			LocationConstraint: types.BucketLocationConstraint(c.region),
+		}
+	}
+	if _, err := c.s3.CreateBucket(ctx, input); err != nil {
+		return fmt.Errorf("storage: create bucket %s: %w", c.bucket, err)
 	}
 	return nil
+}
+
+// uploadBackoff is the delay before each retry; the SDK's own retries are
+// disabled so this policy is the only one.
+var uploadBackoff = []time.Duration{50 * time.Millisecond, 250 * time.Millisecond}
+
+func (c *Client) Upload(ctx context.Context, key string, data []byte, contentType string) error {
+	var err error
+	for attempt := 0; ; attempt++ {
+		_, err = c.s3.PutObject(ctx, &s3.PutObjectInput{
+			Bucket:      aws.String(c.bucket),
+			Key:         aws.String(key),
+			Body:        bytes.NewReader(data),
+			ContentType: aws.String(contentType),
+		})
+		if err == nil {
+			return nil
+		}
+		if attempt >= len(uploadBackoff) {
+			break
+		}
+		select {
+		case <-time.After(uploadBackoff[attempt]):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return fmt.Errorf("storage: upload %s: %w", key, err)
 }
 
 // Download returns the object body and its size (-1 when unknown).
