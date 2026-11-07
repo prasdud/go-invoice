@@ -287,3 +287,44 @@ func TestHealth(t *testing.T) {
 		t.Fatalf("health = %d %s", w.Code, w.Body.String())
 	}
 }
+
+func TestRequestLogShape(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(testConfig(4), okRender, newMemStore(), slog.New(slog.NewJSONHandler(&buf, nil)))
+
+	post(s, "secret", `{"payload":{"invoice_number":"INV-1"}}`)
+
+	var entry map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
+		t.Fatalf("log line is not JSON: %v (%q)", err, buf.String())
+	}
+	for _, key := range []string{
+		"request_id", "invoice_id", "engine", "http_status", "code",
+		"total_ms", "wait_ms", "render_ms", "upload_ms", "bytes", "remote_ip",
+	} {
+		if _, ok := entry[key]; !ok {
+			t.Fatalf("log line missing %q: %s", key, buf.String())
+		}
+	}
+	if entry["code"] != "ok" {
+		t.Fatalf("code = %v", entry["code"])
+	}
+	if strings.Contains(buf.String(), "INV-1") {
+		t.Fatalf("log line contains payload data: %s", buf.String())
+	}
+}
+
+func TestMetricsEndpoint(t *testing.T) {
+	s := New(testConfig(4), okRender, newMemStore(), discardLogger())
+	post(s, "secret", `{"payload":{}}`)
+
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	w := httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, req)
+	body := w.Body.String()
+	for _, series := range []string{"http_requests_total", "render_duration_seconds", "upload_duration_seconds", "render_wait_seconds", "renders_in_flight"} {
+		if !strings.Contains(body, series) {
+			t.Fatalf("metrics missing %q", series)
+		}
+	}
+}

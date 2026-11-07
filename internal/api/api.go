@@ -21,6 +21,7 @@ import (
 	"github.com/prasdud/go-invoice/internal/renderer"
 	"github.com/prasdud/go-invoice/internal/storage"
 	"github.com/prasdud/go-invoice/internal/validate"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const maxBodyBytes = 1 << 20
@@ -72,18 +73,19 @@ func (s *Server) Handler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"status":"ok"}`)
 	})
+	mux.Handle("GET /metrics", promhttp.Handler())
 	mux.HandleFunc("POST /invoices", s.handleCreate)
 	mux.HandleFunc("GET /invoices/{id}", s.handleDownload)
-	return mux
+	return s.withLogging(mux)
 }
 
 func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != "application/json" {
-		s.writeError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Content-Type must be application/json")
+		s.writeError(w, r, http.StatusUnsupportedMediaType, "unsupported_media_type", "Content-Type must be application/json")
 		return
 	}
 	if subtle.ConstantTimeCompare([]byte(r.Header.Get("X-API-Key")), []byte(s.cfg.APIKey)) != 1 {
-		s.writeError(w, http.StatusUnauthorized, "unauthorized", "missing or invalid API key")
+		s.writeError(w, r, http.StatusUnauthorized, "unauthorized", "missing or invalid API key")
 		return
 	}
 
@@ -92,10 +94,10 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		var maxErr *http.MaxBytesError
 		if errors.As(err, &maxErr) {
-			s.writeError(w, http.StatusRequestEntityTooLarge, "payload_too_large", "request body exceeds 1 MiB")
+			s.writeError(w, r, http.StatusRequestEntityTooLarge, "payload_too_large", "request body exceeds 1 MiB")
 			return
 		}
-		s.writeError(w, http.StatusBadRequest, "invalid_json", "request body must be valid JSON")
+		s.writeError(w, r, http.StatusBadRequest, "invalid_json", "request body must be valid JSON")
 		return
 	}
 	if req.Engine == "" {
@@ -108,10 +110,10 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			if ve.Code == "invalid_id" || ve.Code == "unknown_engine" {
 				status = http.StatusBadRequest
 			}
-			s.writeError(w, status, ve.Code, ve.Message)
+			s.writeError(w, r, status, ve.Code, ve.Message)
 			return
 		}
-		s.writeError(w, http.StatusUnprocessableEntity, "invalid_payload", err.Error())
+		s.writeError(w, r, http.StatusUnprocessableEntity, "invalid_payload", err.Error())
 		return
 	}
 
@@ -119,40 +121,65 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		id = ulid.Make().String()
 	}
+	if f := fieldsFrom(r.Context()); f != nil {
+		f.InvoiceID = id
+		f.Engine = string(req.Engine)
+	}
 
+	waitStart := time.Now()
 	release, ok := s.acquire(r.Context())
+	renderWait.Observe(time.Since(waitStart).Seconds())
+	if f := fieldsFrom(r.Context()); f != nil {
+		f.WaitMS = time.Since(waitStart).Milliseconds()
+	}
 	if !ok {
 		if r.Context().Err() != nil {
 			return // client is gone
 		}
 		w.Header().Set("Retry-After", "1")
-		s.writeError(w, http.StatusServiceUnavailable, "overloaded", "render capacity exhausted; retry later")
+		s.writeError(w, r, http.StatusServiceUnavailable, "overloaded", "render capacity exhausted; retry later")
 		return
 	}
-	defer release()
+	rendersInFlight.Inc()
+	defer func() {
+		rendersInFlight.Dec()
+		release()
+	}()
 
 	ctx, cancel := context.WithTimeout(r.Context(), s.cfg.RenderTimeout)
+	renderStart := time.Now()
 	pdf, err := s.render(ctx, req.Engine, renderer.Options{
 		CompanyName:  s.cfg.CompanyName,
 		PrimaryColor: s.cfg.CompanyRGB,
 	}, req.Payload)
 	cancel()
+	renderDuration.WithLabelValues(string(req.Engine)).Observe(time.Since(renderStart).Seconds())
+	if f := fieldsFrom(r.Context()); f != nil {
+		f.RenderMS = time.Since(renderStart).Milliseconds()
+	}
 	if err != nil {
 		switch {
 		case errors.Is(err, renderer.ErrCJKRequiresHTML):
-			s.writeError(w, http.StatusUnprocessableEntity, "invalid_payload", err.Error())
+			s.writeError(w, r, http.StatusUnprocessableEntity, "invalid_payload", err.Error())
 		case errors.Is(err, context.DeadlineExceeded):
-			s.writeError(w, http.StatusInternalServerError, "render_timeout", "render exceeded the timeout")
+			s.writeError(w, r, http.StatusInternalServerError, "render_timeout", "render exceeded the timeout")
 		default:
 			s.log.Error("render failed", "invoice_id", id, "engine", req.Engine, "error", err)
-			s.writeError(w, http.StatusInternalServerError, "render_failed", "render failed")
+			s.writeError(w, r, http.StatusInternalServerError, "render_failed", "render failed")
 		}
 		return
 	}
 
-	if err := s.store.Upload(r.Context(), storage.Key(id), pdf, "application/pdf"); err != nil {
+	uploadStart := time.Now()
+	err = s.store.Upload(r.Context(), storage.Key(id), pdf, "application/pdf")
+	uploadDuration.Observe(time.Since(uploadStart).Seconds())
+	if f := fieldsFrom(r.Context()); f != nil {
+		f.UploadMS = time.Since(uploadStart).Milliseconds()
+		f.Bytes = len(pdf)
+	}
+	if err != nil {
 		s.log.Error("upload failed", "invoice_id", id, "error", err)
-		s.writeError(w, http.StatusBadGateway, "storage_unavailable", "storage upload failed")
+		s.writeError(w, r, http.StatusBadGateway, "storage_unavailable", "storage upload failed")
 		return
 	}
 
@@ -164,19 +191,22 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if f := fieldsFrom(r.Context()); f != nil {
+		f.InvoiceID = id
+	}
 	if !validate.ValidID(id) {
-		s.writeError(w, http.StatusBadRequest, "invalid_id", "id must match [A-Za-z0-9_-]{22,64}")
+		s.writeError(w, r, http.StatusBadRequest, "invalid_id", "id must match [A-Za-z0-9_-]{22,64}")
 		return
 	}
 
 	body, size, err := s.store.Download(r.Context(), storage.Key(id))
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			s.writeError(w, http.StatusNotFound, "not_found", "invoice not found")
+			s.writeError(w, r, http.StatusNotFound, "not_found", "invoice not found")
 			return
 		}
 		s.log.Error("download failed", "invoice_id", id, "error", err)
-		s.writeError(w, http.StatusBadGateway, "storage_unavailable", "storage download failed")
+		s.writeError(w, r, http.StatusBadGateway, "storage_unavailable", "storage download failed")
 		return
 	}
 	defer body.Close()
@@ -210,6 +240,10 @@ func (s *Server) writeJSON(w http.ResponseWriter, status int, v any) {
 	json.NewEncoder(w).Encode(v)
 }
 
-func (s *Server) writeError(w http.ResponseWriter, status int, code, msg string) {
+func (s *Server) writeError(w http.ResponseWriter, r *http.Request, status int, code, msg string) {
+	if f := fieldsFrom(r.Context()); f != nil {
+		f.Code = code
+		f.Error = msg
+	}
 	s.writeJSON(w, status, domain.ErrorResponse{Error: msg, Code: code})
 }

@@ -44,10 +44,10 @@
 
 ## 5. Operations
 
-- [ ] 5.1 Structured JSON request logs with the exact field set from design D10 (no payload contents).
-- [ ] 5.2 Prometheus `/metrics` with the counters/histograms/gauges from design D10 (`prometheus/client_golang`).
-- [ ] 5.3 `/health` liveness endpoint that never touches storage.
-- [ ] 5.4 Rewrite `README.md` for the trimmed product; slim `AGENTS.md` to a pointer at `openspec/` plus working rules.
+- [x] 5.1 Structured JSON request logs with the exact field set from design D10 (no payload contents).
+- [x] 5.2 Prometheus `/metrics` with the counters/histograms/gauges from design D10 (`prometheus/client_golang`).
+- [x] 5.3 `/health` liveness endpoint that never touches storage.
+- [x] 5.4 Rewrite `README.md` for the trimmed product; slim `AGENTS.md` to a pointer at `openspec/` plus working rules.
   - Verify: log line shape asserted in a test; metrics scrape returns all series; docs review against the spec.
 
 ## 6. Load and Acceptance
