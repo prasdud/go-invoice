@@ -52,10 +52,10 @@
 
 ## 6. Load and Acceptance
 
-- [ ] 6.1 Commit `scripts/loadtest` k6 scripts: sustained (500/min, 10 min) and burst (ramp to 5x) for both engines.
-- [ ] 6.2 Run sustained load on a 2 vCPU replica; tune `MAX_CONCURRENT_RENDERS`; record results.
-- [ ] 6.3 Run the burst scenario; confirm only `503` degradation, no crash, full recovery.
-- [ ] 6.4 Record measured capacity and scale-out guidance in `design.md` and `README.md`.
+- [x] 6.1 Commit `scripts/loadtest` k6 scripts: sustained (500/min, 10 min) and burst (ramp to 5x) for both engines.
+- [ ] 6.2 Run sustained load on a 2 vCPU replica; tune `MAX_CONCURRENT_RENDERS`; record results. (blocked: requires MinIO + k6; docker daemon not running)
+- [ ] 6.3 Run the burst scenario; confirm only `503` degradation, no crash, full recovery. (blocked: same as 6.2)
+- [ ] 6.4 Record measured capacity and scale-out guidance in `design.md` and `README.md`. (scale-out guidance in place; measured results pending 6.2/6.3)
   - Verify: acceptance criteria met (zero failures sustained, p99 budgets per invoice-api spec, recovery after burst).
 
 ## 7. Validation
