@@ -1,20 +1,13 @@
 services:
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+  s3mock:
+    image: adobe/s3mock:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
+      - "9090:9090"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/"]
       interval: 2s
       timeout: 2s
-      retries: 5
+      retries: 10
 
   server:
     build: .
@@ -22,11 +15,8 @@ services:
       - "8080:8080"
     env_file: .env
     environment:
-      # Inside the compose network, storage is the minio service, not localhost.
-      S3_ENDPOINT: http://minio:9000
+      # Inside the compose network, storage is the s3mock service, not localhost.
+      S3_ENDPOINT: http://s3mock:9090
     depends_on:
-      minio:
+      s3mock:
         condition: service_healthy
-
-volumes:
-  minio_data:

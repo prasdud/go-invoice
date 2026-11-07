@@ -8,7 +8,7 @@ by adding replicas.
 ## Quick start
 
 ```bash
-make dev          # creates .env from .env.example, starts MinIO + server
+make dev          # creates .env from .env.example, starts the S3 mock + server
 curl http://localhost:8080/health
 # → {"status":"ok"}
 ```
@@ -16,10 +16,10 @@ curl http://localhost:8080/health
 | Service | URL |
 |---|---|
 | Server | http://localhost:8080 |
-| MinIO API | http://localhost:9000 |
-| MinIO Console | http://localhost:9001 |
+| S3 mock | http://localhost:9090 |
 
-MinIO login: `minioadmin` / `minioadmin`
+The compose file uses [adobe/s3mock](https://hub.docker.com/r/adobe/s3mock) (in-memory) for
+development; point `S3_ENDPOINT` at MinIO, AWS S3, or R2 for anything real.
 
 ## API
 
@@ -96,7 +96,7 @@ Line amount = `amount` or `quantity x rate`; totals are computed from these.
 | `ADMISSION_WAIT_MS` | `1000` | Max wait for a render slot before 503 |
 | `RENDER_TIMEOUT_SECONDS` | `10` | Per-render deadline |
 | `LOG_LEVEL` | `info` | Log verbosity |
-| `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_USE_PATH_STYLE` | MinIO defaults | Storage |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_USE_PATH_STYLE` | s3mock defaults | Storage |
 | `CHROME_PATH` | autodetect | Browser binary for the html engine |
 
 Object lifecycle and expiry are configured in your storage console, not in this service.

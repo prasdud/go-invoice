@@ -4,13 +4,13 @@ dev:
 	@[ -f .env ] || cp .env.example .env
 	docker compose up -d
 	@echo "Server:   http://localhost:8080"
-	@echo "MinIO:    http://localhost:9000 (API), http://localhost:9001 (Console)"
+	@echo "S3 mock:  http://localhost:9090"
 
 dev-build:
 	@[ -f .env ] || cp .env.example .env
 	docker compose up -d --build
 	@echo "Server:   http://localhost:8080"
-	@echo "MinIO:    http://localhost:9000 (API), http://localhost:9001 (Console)"
+	@echo "S3 mock:  http://localhost:9090"
 
 down:
 	docker compose down
