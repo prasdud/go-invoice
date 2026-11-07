@@ -33,9 +33,11 @@ internal/renderer/templates/be10x.html
 /be10x-logo.png
 /be10x-logo.jpg
 /be10x-logo.jpeg
+/be10x-logo.webp
 /logo.png
 /logo.jpg
 /logo.jpeg
+/logo.webp
 
 # Generated PDF output from tests
 /output/
