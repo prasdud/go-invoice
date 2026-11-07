@@ -17,8 +17,8 @@
 
 ## 3. Docs
 
-- [ ] 3.1 README: "Themes & branding" section — new env var plus how to add a theme (one Go file + one HTML asset).
-- [ ] 3.2 AGENTS.md working rule: themes are compile-time; one Go file per theme; never load templates at runtime.
+- [x] 3.1 README: "Themes & branding" section — new env var plus how to add a theme (one Go file + one HTML asset).
+- [x] 3.2 AGENTS.md working rule: themes are compile-time; one Go file per theme; never load templates at runtime.
   - Verify: docs review against the spec.
 
 ## 4. Validation

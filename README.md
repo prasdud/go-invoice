@@ -87,6 +87,23 @@ sent to `basic` fails with `422 invalid_payload` and the message
 `payload contains CJK text; use engine "html"`, so it is safe to retry the same invoice with
 `engine: "html"`.
 
+## Themes & branding
+
+Layouts are **compile-time themes**: embedded in the binary, parsed once at startup, and free
+per request — no template files at runtime, no cache, nothing to reload.
+
+Branding is configuration:
+
+| Variable | Purpose |
+|---|---|
+| `COMPANY_NAME` | Header text |
+| `COMPANY_COLOR` | Header and table color (6-digit hex) |
+| `COMPANY_LOGO` | Optional path to a PNG or JPEG logo (max 1 MiB), shown in the header on both engines |
+
+Adding a theme = one Go file + one HTML asset in `internal/renderer/templates/` (see
+`default.go` + `default.html`), then rebuild. Themes are compiled in on purpose: adding theme
+selection is a follow-up when a second theme exists.
+
 ## Benchmarks
 
 Measured on a **1 vCPU / 1 GiB** replica against a **real Cloudflare R2 bucket**, closed-loop
@@ -124,7 +141,7 @@ Line amount = `amount` or `quantity x rate`; totals are computed from these.
 | `BASE_URL` | `http://localhost:8080` | Prefix for returned invoice URLs |
 | `PORT` | `8080` | HTTP port |
 | `API_KEY` | (required) | POST authentication |
-| `COMPANY_NAME` / `COMPANY_COLOR` | `Invoice` / `284878` | PDF header branding |
+| `COMPANY_NAME` / `COMPANY_COLOR` / `COMPANY_LOGO` | `Invoice` / `284878` / (none) | Header branding; logo is a PNG/JPEG path (≤1 MiB) |
 | `MAX_CONCURRENT_RENDERS` | `16` | Render semaphore size |
 | `ADMISSION_WAIT_MS` | `1000` | Max wait for a render slot before 503 |
 | `RENDER_TIMEOUT_SECONDS` | `10` | Per-render deadline |

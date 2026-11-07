@@ -101,6 +101,8 @@ The only persistence is S3-compatible object storage at `invoices/{id}.pdf`.
   them without a trigger from the proposal.
 - CJK must go through the `html` engine. The basic engine rejects CJK loudly
   (`ErrCJKRequiresHTML`) because DejaVu has no CJK glyphs — never render blank Chinese.
+- Themes are compile-time: one Go file + one HTML asset per theme in
+  `internal/renderer/templates/`; never load templates at runtime.
 - ID equals storage key: caller-supplied ids are the idempotency mechanism (ULID generated
   when omitted). Keep the `[A-Za-z0-9_-]{22,64}` contract.
 - Overload behavior is `503 + Retry-After`, never unbounded goroutines.
