@@ -60,5 +60,5 @@
 
 ## 7. Validation
 
-- [ ] 7.1 Run OpenSpec validation for this change (strict) and resolve all findings.
-- [ ] 7.2 Run `go build ./...`, `go vet ./...`, `go test ./...` on the final tree.
+- [x] 7.1 Run OpenSpec validation for this change (strict) and resolve all findings.
+- [x] 7.2 Run `go build ./...`, `go vet ./...`, `go test ./...` on the final tree.
