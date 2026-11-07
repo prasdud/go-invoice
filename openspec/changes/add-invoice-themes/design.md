@@ -49,7 +49,7 @@ real file (editor support, `html/template` auto-escaping) rather than a Go strin
 ```go
 type Theme struct {
     Name string
-    HTML *template.Template // parsed with the shared FuncMap (f2s), immutable
+    HTML *template.Template // parsed once at init, immutable
 }
 ```
 

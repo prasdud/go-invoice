@@ -2,10 +2,10 @@
 
 ## 1. Theme Package
 
-- [ ] 1.1 Add `internal/renderer/templates` with `registry.go`: `Theme` type, registry, `Default()`, shared FuncMap (`f2s`).
-- [ ] 1.2 Move `invoice.html` to `templates/default.html`; add `templates/default.go` (`//go:embed`, `init()` registration, parse with the FuncMap).
-- [ ] 1.3 Switch the html renderer to execute `templates.Default()`; remove the old embed and template from `chromedp.go`.
-  - Verify: `go build ./... && go test ./...`; rendered html invoices unchanged in fields and layout.
+- [x] 1.1 Add `internal/renderer/templates` with `registry.go`: `Theme` type, registry, `Default()`.
+- [x] 1.2 Move `invoice.html` to `templates/default.html`; add `templates/default.go` (`//go:embed`, `init()` registration, parse).
+- [x] 1.3 Switch the html renderer to execute `templates.Default()`; remove the old embed and template from `chromedp.go`.
+  - Verify: `go build ./... && go test ./...`; rendered html invoices unchanged in fields and layout. (verified visually via QuickLook; `f2s` was unused dead code and was dropped)
 
 ## 2. Branding (Logo)
 

@@ -2,10 +2,8 @@ package renderer
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"math"
 	"os"
 	"strings"
@@ -14,15 +12,8 @@ import (
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"github.com/prasdud/go-invoice/internal/renderer/templates"
 )
-
-//go:embed invoice.html
-var invoiceHTML string
-
-var htmlTmpl = template.Must(template.New("invoice").
-	Funcs(template.FuncMap{
-		"f2s": func(f float64) string { return fmt.Sprintf("%.2f", f) },
-	}).Parse(invoiceHTML))
 
 type htmlItem struct {
 	Description string
@@ -101,7 +92,7 @@ func generateHTML(parent context.Context, opts Options, payload json.RawMessage)
 	}
 
 	var buf strings.Builder
-	if err := htmlTmpl.Execute(&buf, hd); err != nil {
+	if err := templates.Default().HTML.Execute(&buf, hd); err != nil {
 		return nil, fmt.Errorf("renderer: template: %w", err)
 	}
 
