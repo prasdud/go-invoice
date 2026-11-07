@@ -1,0 +1,47 @@
+schema: spec-driven
+
+context: |
+  go-invoice is a self-hosted, open-source microservice that renders PDF invoices from
+  JSON payloads and stores them in S3-compatible object storage (AWS S3, Cloudflare R2,
+  MinIO).
+
+  Non-negotiable constraints:
+  - Synchronous: POST /invoices validates, renders, uploads, and returns {invoice_id, url}
+    in the same request. No queue, no polling, no background processing, no status store.
+  - Stateless: S3-compatible storage is the only persistence. Any replica serves any
+    request. Scale-out means adding replicas; rolling deploys need no draining.
+  - Capacity target: 500 invoices/minute (~8.3/sec) sustained on a single small replica.
+  - Two public data endpoints: POST /invoices (API key) and GET /invoices/{id}
+    (unguessable id, no auth). Downloads stream bytes; never redirect; never expose
+    storage URLs, hosts, or providers to clients.
+  - Engines: basic (pure Go, default) and html (headless Chromium, opt-in per request).
+    The caller selects the engine; the service never sniffs payload content.
+  - Redis, SQLite, job queues, DLQ, worker pools, status polling, admin UI, templates,
+    webhooks, events, and email are explicitly out of scope. See the proposal for the
+    parked list and revisit triggers.
+  - Structured JSON logs are the audit trail. Prometheus metrics are exposed on /metrics.
+
+rules:
+  proposal:
+    - State what is explicitly out of scope.
+    - Keep the proposal focused on why and what, not implementation detail.
+    - Capacity targets must appear as numbers with their math.
+  specs:
+    - Use RFC 2119 keywords and WHEN/THEN scenarios.
+    - Include edge cases for overload, storage failures, invalid payloads, and duplicates.
+  design:
+    - Prefer the smallest dependency surface that satisfies the requirements.
+    - Record the capacity math and the conditions that would bring the async design back.
+  tasks:
+    - Order tasks by dependency; benchmark before tuning.
+    - Include verification for build, vet, tests, an end-to-end smoke against MinIO, and
+      OpenSpec validation.
+
+operations:
+  apply:
+    guidance:
+      - Benchmark the renderer (section 0) before choosing semaphore and pool defaults.
+      - Never run load tests against production storage buckets.
+  archive:
+    guidance:
+      - Summarize measured capacity and which requirements were verified end to end.
