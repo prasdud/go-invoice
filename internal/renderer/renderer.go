@@ -150,7 +150,7 @@ func generateBasic(ctx context.Context, opts Options, payload json.RawMessage) (
 	billAddr := strVal(data, "bill_to_address")
 	if billAddr != "" {
 		pdf.SetFont("DejaVu", "", 10)
-		pdf.CellFormat(0, 6, sanitize(billAddr), "", 1, "L", false, 0, "")
+		pdf.MultiCell(width, 6, sanitize(billAddr), "", "L", false)
 	}
 	pdf.Ln(4)
 	line()
