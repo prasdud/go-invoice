@@ -65,8 +65,9 @@ Implications:
   ~1,800/min for the basic engine regardless of the renderer.
 - The 500/min target has ~3.6x headroom on this replica; at target arrival rate
   (~5 concurrent) p99 is 0.7-0.9s, inside the basic budget.
-- Raise `MAX_CONCURRENT_RENDERS` (e.g. 64) to scale basic throughput ~4x; render CPU is
-  ~0.3 core at 1,800/min. The html engine needs more cores: one vCPU starves Chromium.
+- Raise `MAX_CONCURRENT_RENDERS` to 64: measured **~7,300/min basic** on the same replica
+  (122/s, p50 ~475ms, p99 ~1s, zero shedding to c=128). At that point the 1 vCPU is fully
+  busy; memory stays under 60MB. The html engine sees no benefit from more slots on one core.
 - An R2 location hint closer to the caller cuts upload latency and multiplies throughput
   proportionally. Objects left behind by a full ramp: ~2k, ~40MB.
 
