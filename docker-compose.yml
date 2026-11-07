@@ -21,6 +21,9 @@ services:
     ports:
       - "8080:8080"
     env_file: .env
+    environment:
+      # Inside the compose network, storage is the minio service, not localhost.
+      S3_ENDPOINT: http://minio:9000
     depends_on:
       minio:
         condition: service_healthy
