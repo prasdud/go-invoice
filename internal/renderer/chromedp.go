@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"html/template"
 	"math"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chromedp/cdproto/page"
@@ -103,28 +105,17 @@ func generateHTML(parent context.Context, opts Options, payload json.RawMessage)
 		return nil, fmt.Errorf("renderer: template: %w", err)
 	}
 
-	optsC := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("disable-dev-shm-usage", true),
-	)
+	tabCtx, cancelTab, err := htmlPool.tab(parent)
+	if err != nil {
+		return nil, err
+	}
+	defer cancelTab()
 
-	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), optsC...)
-	defer allocCancel()
-
-	ctx, cancel := chromedp.NewContext(allocCtx)
-	defer cancel()
-
-	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
+	tabCtx, cancelTimeout := context.WithTimeout(tabCtx, 60*time.Second)
 	defer cancelTimeout()
 
-	// Tear the render down when the caller's context ends (request timeout).
-	stop := context.AfterFunc(parent, cancel)
-	defer stop()
-
 	var pdfData []byte
-	err := chromedp.Run(ctx,
+	err = chromedp.Run(tabCtx,
 		chromedp.Navigate("about:blank"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			tree, err := page.GetFrameTree().Do(ctx)
@@ -148,8 +139,68 @@ func generateHTML(parent context.Context, opts Options, payload json.RawMessage)
 		}),
 	)
 	if err != nil {
+		htmlPool.failed()
 		return nil, fmt.Errorf("renderer: chromedp: %w", err)
 	}
 
 	return pdfData, nil
+}
+
+// browserPool keeps one Chromium process per replica. Every render gets a fresh
+// tab derived from the primary context that owns the browser; the browser is
+// relaunched after a failure.
+var htmlPool browserPool
+
+type browserPool struct {
+	mu      sync.Mutex
+	primary context.Context
+	stop    context.CancelFunc
+	dead    bool
+}
+
+func (p *browserPool) tab(parent context.Context) (context.Context, context.CancelFunc, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.primary == nil || p.dead {
+		if p.stop != nil {
+			p.stop()
+		}
+		opts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("disable-gpu", true),
+			chromedp.Flag("no-sandbox", true),
+		)
+		if path := os.Getenv("CHROME_PATH"); path != "" {
+			opts = append(opts, chromedp.ExecPath(path))
+		}
+		allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
+		primary, cancelPrimary := chromedp.NewContext(allocCtx)
+		if err := chromedp.Run(primary); err != nil {
+			cancelPrimary()
+			cancelAlloc()
+			p.primary, p.stop = nil, nil
+			return nil, nil, fmt.Errorf("renderer: start browser: %w", err)
+		}
+		p.primary = primary
+		p.stop = func() {
+			cancelPrimary()
+			cancelAlloc()
+		}
+		p.dead = false
+	}
+
+	ctx, cancel := chromedp.NewContext(p.primary)
+	// Close the tab when the caller's request context ends.
+	stopTab := context.AfterFunc(parent, cancel)
+	return ctx, func() {
+		stopTab()
+		cancel()
+	}, nil
+}
+
+// failed marks the shared browser as unusable; the next render relaunches it.
+func (p *browserPool) failed() {
+	p.mu.Lock()
+	p.dead = true
+	p.mu.Unlock()
 }

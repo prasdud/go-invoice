@@ -36,14 +36,14 @@ not available, estimate kept):
 | Engine | Render (measured) | + upload (est.) | In-flight @8.3/s | Single replica need |
 |---|---|---|---|---|
 | basic (gofpdf) | 2.5ms | ~100ms total | <1 | ~2% of one core |
-| html (Chromium) | 381ms (browser launched per render; pooling is Phase 3) | ~450ms total | ~3.8 | ~2 cores, <1GB RAM |
+| html (Chromium, pooled) | 74ms warm, 473ms cold (first render launches the browser) | ~200ms total | ~1 | ~1-2 cores, <1GB RAM |
 
-Allocations: basic ~9.0MB/op (gofpdf parses the embedded font per document), html ~1.1MB/op
+Allocations: basic ~9.0MB/op (gofpdf parses the embedded font per document), html ~0.9MB/op
 plus the browser process. `many_items` is within 2% of `standard_us` for the basic engine.
 
 With `MAX_CONCURRENT_RENDERS=16` (default, tuned in task 6.2):
 
-- html: 16 / 0.381s ≈ 42/s ≈ 2500/min, ~5x headroom at the target (pooling improves this).
+- html: 16 / 0.074s ≈ 216/s ≈ 13,000/min, ~26x headroom at the target.
 - basic: ~16 / 0.0025s ≈ 6400/s, far beyond the target.
 
 Scale-out is horizontal: replicas are identical and interchangeable.

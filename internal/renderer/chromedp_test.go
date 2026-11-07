@@ -44,3 +44,22 @@ func TestChromeCJK(t *testing.T) {
 		t.Fatalf("Not a PDF: starts with %q", string(pdf[:20]))
 	}
 }
+
+func TestHTMLRecoversAfterBrowserFailure(t *testing.T) {
+	payload := json.RawMessage(`{
+		"bill_to": "株式会社 田中商事",
+		"items": [{"description": "テスト", "quantity": 1, "rate": 1}]
+	}`)
+	opts := Options{CompanyName: "Recovery Test"}
+	ctx := context.Background()
+
+	if _, err := Generate(ctx, domain.EngineHTML, opts, payload); err != nil {
+		t.Fatalf("first render: %v", err)
+	}
+
+	htmlPool.failed() // simulate a detected browser crash
+
+	if _, err := Generate(ctx, domain.EngineHTML, opts, payload); err != nil {
+		t.Fatalf("render after failure: %v", err)
+	}
+}

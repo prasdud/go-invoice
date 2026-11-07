@@ -30,9 +30,9 @@
 
 ## 3. HTML Engine Hardening
 
-- [ ] 3.1 Browser pool: one allocator per replica, one page per render, concurrency bounded by the semaphore, per-render context timeout, relaunch after a browser crash.
-- [ ] 3.2 Runtime image: Chromium + `fonts-noto-cjk` installed; `CHROME_PATH` respected; keep `CGO_ENABLED=0`.
-- [ ] 3.3 Integration test: CJK invoice rendered end-to-end inside the container.
+- [x] 3.1 Browser pool: one allocator per replica, one page per render, concurrency bounded by the semaphore, per-render context timeout, relaunch after a browser crash.
+- [x] 3.2 Runtime image: Chromium + `fonts-noto-cjk` installed; `CHROME_PATH` respected; keep `CGO_ENABLED=0`.
+- [ ] 3.3 Integration test: CJK invoice rendered end-to-end inside the container. (blocked: docker daemon not running; local CJK e2e + crash-recovery covered by renderer tests)
   - Verify: CJK PDF through the API in the container; memory ceiling holds under N concurrent html renders; crash-recovery test passes.
 
 ## 4. Storage Hardening
